@@ -8,6 +8,8 @@ import Upgrades from './components/Upgrades';
 import GoldenCoxinha from './components/GoldenCoxinha';
 import NewsTicker from './components/NewsTicker';
 import SystemsUI from './components/SystemsUI';
+import MainMenu from './components/MainMenu';
+import MusicPlayer from './components/MusicPlayer';
 import { ComboSystem } from './systems/ComboSystem';
 import { RandomEvents } from './systems/RandomEvents';
 import { DailyQuests } from './systems/DailyQuests';
@@ -71,6 +73,10 @@ const playSound = (type: 'click' | 'buy' | 'upgrade' | 'golden', enabled: boolea
 };
 
 const App: React.FC = () => {
+  // Game State
+  const [gameStarted, setGameStarted] = useState<boolean>(false);
+  const [musicEnabled, setMusicEnabled] = useState<boolean>(true);
+  
   const [coxinhas, setCoxinhas] = useState<number>(0);
   const [lifetimeCoxinhas, setLifetimeCoxinhas] = useState<number>(0);
   const [buildings, setBuildings] = useState<Building[]>(INITIAL_BUILDINGS);
@@ -381,8 +387,25 @@ const App: React.FC = () => {
 
   const cursorCount = buildings.find(b => b.id === 'cursor')?.count || 0;
 
+  // Show Main Menu if game hasn't started
+  if (!gameStarted) {
+    return (
+      <>
+        <MainMenu 
+          onStart={() => setGameStarted(true)}
+          soundEnabled={soundEnabled}
+          onToggleSound={() => setSoundEnabled(!soundEnabled)}
+          musicPlaying={musicEnabled}
+          onToggleMusic={() => setMusicEnabled(!musicEnabled)}
+        />
+        <MusicPlayer enabled={musicEnabled} volume={0.3} />
+      </>
+    );
+  }
+
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden relative select-none">
+    <>
+      <div className="h-screen w-screen flex flex-col overflow-hidden relative select-none">
       
       {/* Background Texture Overlay */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
@@ -504,6 +527,8 @@ const App: React.FC = () => {
       </div>
 
     </div>
+      <MusicPlayer enabled={musicEnabled} volume={0.3} />
+    </>
   );
 };
 
