@@ -7,6 +7,10 @@ import BuildingRow from './components/BuildingRow';
 import Upgrades from './components/Upgrades';
 import GoldenCoxinha from './components/GoldenCoxinha';
 import NewsTicker from './components/NewsTicker';
+import SystemsUI from './components/SystemsUI';
+import { ComboSystem } from './systems/ComboSystem';
+import { RandomEvents } from './systems/RandomEvents';
+import { DailyQuests } from './systems/DailyQuests';
 import { Save, RotateCcw, Volume2, VolumeX, TrendingUp, Trophy, Zap, MousePointer2 } from 'lucide-react';
 
 const SAVE_KEY = 'coxinha_clicker_ultimate_2026';
@@ -87,6 +91,18 @@ const App: React.FC = () => {
   const frenzyTimerRef = useRef<number | null>(null);
   const frenzyMultiplierRef = useRef<number>(1); // To separate from permanent global multiplier
 
+  // Game Systems
+  const comboSystemRef = useRef(new ComboSystem());
+  const randomEventsRef = useRef(new RandomEvents());
+  const dailyQuestsRef = useRef(new DailyQuests());
+  
+  // System UI States
+  const [comboCount, setComboCount] = useState<number>(0);
+  const [activeEvent, setActiveEvent] = useState<{name: string; icon: string; color: string} | null>(null);
+  const [questProgress, setQuestProgress] = useState<number>(0);
+  const [questsCompleted, setQuestsCompleted] = useState<number>(0);
+  const [eventNotifications, setEventNotifications] = useState<{id: number; message: string; icon: string; color: string; duration: number}[]>([]);
+
   // --- Logic ---
   const saveGame = useCallback(() => {
     const gameState: GameState = { coxinhas, totalCoxinhas: lifetimeCoxinhas, startTime: Date.now(), buildings, upgrades, prestigeLevel: 0 };
@@ -106,9 +122,77 @@ const App: React.FC = () => {
         setUpgrades(mergedUpgrades);
       } catch (e) { console.error("Corrupted save", e); }
     }
+
+    // Initialize Game Systems with Callbacks
+    comboSystemRef.current.callbacks.onCombo = (count) => {
+      addFloatingText(window.innerWidth/2, window.innerHeight/4, `${count} COMBO! 🔥`, '#ffaa00', true);
+      setComboCount(count);
+    };
+    
+    comboSystemRef.current.callbacks.onBreak = () => {
+      setComboCount(0);
+    };
+
+    randomEventsRef.current.callbacks.onEventTriggered = (event) => {
+      const eventMap: {[key: string]: {name: string; icon: string; color: string}} = {
+        'chuva_coxinhas': {name: 'Chuva de Coxinhas! ☔', icon: '🌧️', color: '#2196F3'},
+        'vovo_inspirada': {name: 'Vovó Inspirada! 👵', icon: '👵', color: '#FF69B4'},
+        'apagao': {name: 'Apagão! ⚫', icon: '⚫', color: '#222'},
+        'rush_hour': {name: 'Hora do Rush! 🚀', icon: '🚀', color: '#FF6B00'},
+        'fiscal': {name: 'Fiscal da Prefeitura! 👮', icon: '👮', color: '#FF0000'},
+        'cliente_vip': {name: 'Cliente VIP! 💎', icon: '💎', color: '#FFD700'},
+      };
+      
+      const info = eventMap[event.id] || {name: event.name, icon: '✨', color: '#FFD700'};
+      setActiveEvent(info);
+      setEventNotifications(prev => [...prev, {
+        id: Date.now(),
+        message: event.message,
+        icon: info.icon,
+        color: info.color,
+        duration: 3000
+      }]);
+      
+      setTimeout(() => setActiveEvent(null), 2000);
+    };
+
+    dailyQuestsRef.current.checkReset();
+    setQuestsCompleted(dailyQuestsRef.current.getCompletedCount());
   }, []);
 
   useEffect(() => { const i = setInterval(saveGame, 30000); return () => clearInterval(i); }, [saveGame]);
+
+  // System Updates Loop
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Update RandomEvents
+      randomEventsRef.current.update(0.016, { coxinhas, cps });
+      
+      // Update Daily Quests
+      dailyQuestsRef.current.checkReset();
+      setQuestsCompleted(dailyQuestsRef.current.getCompletedCount());
+      
+      // Update quest progress
+      const currentQuest = dailyQuestsRef.current.quests[0];
+      if (currentQuest) {
+        const progress = (currentQuest.progress / currentQuest.goal) * 100;
+        setQuestProgress(Math.min(progress, 100));
+      }
+    }, 100);
+    
+    return () => clearInterval(interval);
+  }, [coxinhas, cps]);
+
+  // Event Notifications Cleanup
+  useEffect(() => {
+    const timers = eventNotifications.map(event =>
+      setTimeout(() => {
+        setEventNotifications(prev => prev.filter(e => e.id !== event.id));
+      }, 3000)
+    );
+    
+    return () => timers.forEach(t => clearTimeout(t));
+  }, [eventNotifications]);
 
   // --- Recalculate Game Stats (CPS, Click, Multipliers) ---
   useEffect(() => {
@@ -194,8 +278,15 @@ const App: React.FC = () => {
     if (navigator.vibrate) navigator.vibrate(10);
     playSound('click', soundEnabled);
     
+    // Combo System
+    const comboMultiplier = comboSystemRef.current.onClick();
+    setComboCount(comboSystemRef.current.comboCount);
+    
+    // Quest tracking
+    dailyQuestsRef.current.checkProgress('clicks', 1);
+    
     const isCrit = Math.random() < 0.02; // 2% crit
-    let damage = clickPower;
+    let damage = clickPower * comboMultiplier; // Apply combo multiplier
     if (isCrit) damage *= 7;
 
     setCoxinhas(p => p + damage);
@@ -213,6 +304,9 @@ const App: React.FC = () => {
       playSound('golden', soundEnabled);
       if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
       
+      // Quest tracking
+      dailyQuestsRef.current.checkProgress('golden_clicked', 1);
+      
       const type = Math.random() > 0.5 ? 'frenzy' : 'lucky';
       
       if (type === 'frenzy') {
@@ -229,6 +323,11 @@ const App: React.FC = () => {
           // Lucky: 10% of bank or 15 mins of CpS
           const gain = Math.min(coxinhas * 0.10, cps * 900) + 777;
           setCoxinhas(p => p + gain);
+          setLifetimeCoxinhas(p => p + gain);
+          
+          // Quest tracking
+          dailyQuestsRef.current.checkProgress('produced', gain);
+          
           addFloatingText(window.innerWidth/2, window.innerHeight/3, `SORTE! +${formatNumber(gain)}`, '#39ff14', true);
       }
       
@@ -256,7 +355,11 @@ const App: React.FC = () => {
       playSound(type === 'building' ? 'buy' : 'upgrade', soundEnabled);
       setCoxinhas(c => c - cost);
       action();
-      if(type === 'building') spawnParticles(window.innerWidth * 0.8, window.innerHeight * 0.5, 'flour', 5);
+      
+      if(type === 'building') {
+        spawnParticles(window.innerWidth * 0.8, window.innerHeight * 0.5, 'flour', 5);
+        dailyQuestsRef.current.checkProgress('buildings_bought', 1);
+      }
     }
   };
 
@@ -281,6 +384,15 @@ const App: React.FC = () => {
 
       <NewsTicker />
       <GoldenCoxinha onClick={handleGoldenCoxinha} spawnRateMultiplier={goldenSpawnRate} />
+
+      {/* Systems UI Overlay */}
+      <SystemsUI 
+        comboCount={comboCount}
+        activeEvent={activeEvent}
+        questProgress={questProgress}
+        questsCompleted={questsCompleted}
+        events={eventNotifications}
+      />
 
       {floatingTexts.map(t => (
         <div key={t.id} className="floating-text" style={{ left: t.x, top: t.y, color: t.color, fontSize: t.isBig ? '2rem' : '1.2rem' }}>{t.text}</div>
