@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Building } from '../types';
 import { calculateBuildingCost, formatNumber } from '../utils';
 
@@ -6,38 +6,26 @@ interface BuildingCardProps {
   building: Building;
   canAfford: boolean;
   onBuy: (amount: number) => void;
-  buyMode: number; // 0=x1, 1=x10, 2=x100, 3=Max
+  buyAmount: number;
+  buyLabel: string;
 }
-
-const BUY_MODES = [1, 10, 100, 'Max'] as const;
 
 const BuildingCard: React.FC<BuildingCardProps> = ({
   building,
   canAfford,
   onBuy,
-  buyMode
+  buyAmount,
+  buyLabel
 }) => {
   const nextCost = calculateBuildingCost(building.baseCost, building.count);
   const totalProduction = building.baseCps * building.count;
-  const buyAmount = BUY_MODES[buyMode];
-
-  const affordableCount = (coxinhas: number) => {
-    let count = 0;
-    let currentCost = nextCost;
-    while (coxinhas >= currentCost && count < 1000) {
-      coxinhas -= currentCost;
-      currentCost = calculateBuildingCost(building.baseCost, building.count + count + 1);
-      count++;
-    }
-    return count;
-  };
 
   return (
     <div
-      className={`p-4 mb-2 rounded-lg border-2 transition-all ${
+      className={`p-4 mb-3 rounded-lg border-2 transition-all ${
         canAfford
           ? 'bg-[#2a2a2a] border-[#ffaa00]/50 hover:border-[#ffaa00] hover:bg-[#333]'
-          : 'bg-[#1a1a1a] border-[#444] opacity-50'
+          : 'bg-[#1a1a1a] border-[#444]'
       }`}
     >
       {/* Top Row: Icon + Name + Count */}
@@ -57,39 +45,30 @@ const BuildingCard: React.FC<BuildingCardProps> = ({
 
       {/* Production Info */}
       {building.count > 0 && (
-        <div className="mb-3 px-2 py-1 bg-[#1a1a1a] rounded text-xs text-[#39ff14]">
+        <div className="mb-3 px-2 py-1 bg-[#1a1a1a] rounded text-xs text-[#39ff14] border border-[#444]">
           +{formatNumber(totalProduction)} Cx/s
         </div>
       )}
 
-      {/* Buy Controls */}
-      <div className="flex items-center gap-2 mb-3">
-        <div className="flex-1 text-xs">
-          <div className="text-gray-500 mb-1">Próximo Custo:</div>
-          <div className="text-lg font-black text-[#ffaa00]">
-            {formatNumber(nextCost)}
-          </div>
+      {/* Cost Section */}
+      <div className="mb-3 p-2 bg-[#1a1a1a] rounded border border-[#444]">
+        <div className="text-xs text-gray-500 mb-1">Próximo Custo:</div>
+        <div className="text-lg font-black text-[#ffaa00]">
+          {formatNumber(nextCost)}
         </div>
-        <button
-          onClick={() => onBuy(typeof buyAmount === 'string' ? 1000 : buyAmount)}
-          disabled={!canAfford}
-          className={`px-4 py-3 rounded font-bold text-xs transition-all ${
-            canAfford
-              ? 'bg-[#ffaa00] text-black hover:bg-[#ffcc00] active:scale-95'
-              : 'bg-[#444] text-gray-600 cursor-not-allowed'
-          }`}
-        >
-          COMPRAR
-        </button>
       </div>
 
-      {/* Progress Bar */}
-      <div className="w-full h-1 bg-[#1a1a1a] rounded overflow-hidden border border-[#444]">
-        <div
-          className="h-full bg-gradient-to-r from-[#ffaa00] to-[#ffcc00]"
-          style={{ width: '0%' }}
-        />
-      </div>
+      {/* Buy Button with Label */}
+      <button
+        onClick={() => onBuy(buyAmount)}
+        className={`w-full py-3 rounded font-bold text-sm transition-all ${
+          canAfford
+            ? 'bg-[#ffaa00] text-black hover:bg-[#ffcc00] active:scale-95 shadow-lg'
+            : 'bg-[#3a3a3a] text-gray-600 cursor-not-allowed opacity-50'
+        }`}
+      >
+        COMPRAR {buyLabel}
+      </button>
     </div>
   );
 };
