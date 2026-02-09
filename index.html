@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Coxinha Clicker - A Lenda da Fritura</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --oil-bg: linear-gradient(135deg, #1a0f08 0%, #2c1810 50%, #120a06 100%);
+        --panel-dark: rgba(26, 15, 8, 0.96);
+        --glass-dark: rgba(255,255,255,0.03);
+        --oil-glow: #d4a574;
+        --fry-neon: #ffaa00;
+        --text-gold: #ffcc00;
+      }
+
+      body {
+        font-family: 'Poppins', sans-serif;
+        overflow: hidden;
+        background: var(--oil-bg);
+        color: #e5e5e5;
+        overscroll-behavior: none;
+      }
+
+      /* --- Animations --- */
+      @keyframes floatUp {
+        0% { transform: translateY(0) scale(0.8); opacity: 0; }
+        20% { transform: translateY(-20px) scale(1.1); opacity: 1; text-shadow: 0 0 5px #000; }
+        100% { transform: translateY(-80px) scale(0.9); opacity: 0; }
+      }
+      
+      @keyframes neonPulse {
+        0% { box-shadow: 0 0 0 0 rgba(255, 170, 0, 0.4); border-color: rgba(255, 170, 0, 0.6); }
+        70% { box-shadow: 0 0 10px 2px rgba(255, 170, 0, 0); border-color: rgba(255, 170, 0, 0.2); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 170, 0, 0); border-color: rgba(255, 170, 0, 0); }
+      }
+
+      @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+      }
+
+      /* --- Classes --- */
+      .floating-text {
+        position: absolute;
+        animation: floatUp 1.2s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        pointer-events: none;
+        user-select: none;
+        font-weight: 900;
+        z-index: 9999;
+        -webkit-text-stroke: 1px rgba(0,0,0,0.5);
+      }
+      
+      .shimmer-effect {
+        background: linear-gradient(90deg, transparent, rgba(255, 170, 0, 0.1), transparent);
+        background-size: 200% 100%;
+        animation: shimmer 3s infinite linear;
+      }
+
+      .pulse-neon {
+        animation: neonPulse 2s infinite;
+      }
+
+      .glass-panel {
+        background: var(--panel-dark);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 170, 0, 0.15);
+        box-shadow: 
+          0 20px 50px rgba(0,0,0,0.9),
+          inset 0 1px 0 rgba(255,255,255,0.05);
+      }
+
+      /* --- Scrollbar --- */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.3);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #5c3a21;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #ffaa00;
+      }
+      
+      /* --- Ticker --- */
+      .ticker-wrap {
+        width: 100%;
+        overflow: hidden;
+        background: #0a0503;
+        border-bottom: 1px solid #3d2211;
+      }
+      .ticker {
+        display: inline-block;
+        white-space: nowrap;
+        animation: ticker 40s linear infinite;
+        padding-left: 100%;
+      }
+      @keyframes ticker {
+        0% { transform: translate3d(0, 0, 0); }
+        100% { transform: translate3d(-100%, 0, 0); }
+      }
+
+      /* --- Oil Particles --- */
+      .particle {
+        position: fixed;
+        pointer-events: none;
+        border-radius: 50%;
+        will-change: transform, opacity;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
