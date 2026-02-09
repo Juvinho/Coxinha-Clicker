@@ -488,6 +488,29 @@ const App: React.FC = () => {
     saveGame();
   };
 
+  const handleShowRequirements = (galaxy: any) => {
+    const unmetRequirements = galaxy.requirements.filter((req: any) => {
+      const value = (stats as any)[req.stat];
+      return value < req.amount;
+    });
+    
+    const reqText = unmetRequirements.map((r: any) => `${r.stat}: ${r.amount}`).join('\n');
+    alert(`Requisitos não atendidos para ${galaxy.name}:\n\n${reqText}`);
+  };
+
+  const stats = {
+    total_coxinhas: lifetimeCoxinhas,
+    rebirths: rebirthCount,
+    galaxies_owned: Object.keys(rebirthSystem.ownedGalaxies).length,
+    planets_discovered: rebirthSystem.discoveredPlanets.length,
+    time_played: 0,
+    portals_entered: rebirthCount,
+    ascensions_completed: rebirthCount,
+    cities_owned: buildings.reduce((a, b) => a + b.count, 0),
+    click_count: 0,
+    buildings_purchased: buildings.reduce((a, b) => a + b.count, 0)
+  };
+
   const cursorCount = buildings.find(b => b.id === 'cursor')?.count || 0;
 
   // Show Coxinha Menu if game hasn't started
@@ -654,7 +677,7 @@ const App: React.FC = () => {
       {/* Galaxy Explorer Modal */}
       {showGalaxyExplorer && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-[#1a1a2e] rounded-2xl border-2 border-purple-500/30 shadow-2xl max-w-6xl w-full my-10">
+          <div className="bg-[#1a1a2e] rounded-2xl border-2 border-purple-500/30 shadow-2xl max-w-7xl w-full my-10">
             <div className="flex justify-between items-center p-6 border-b border-purple-500/20 bg-[#16213e]">
               <h2 className="text-2xl font-bold text-purple-300 flex items-center gap-2">
                 <Sparkles size={24} /> Exploração Galáctica
@@ -671,21 +694,11 @@ const App: React.FC = () => {
                 rebirthSystem={rebirthSystem}
                 hotOilFragments={hotOilFragments}
                 currentGalaxy={currentGalaxy}
-                stats={{
-                  total_coxinhas: lifetimeCoxinhas,
-                  rebirths: rebirthCount,
-                  galaxies_owned: Object.keys(rebirthSystem.ownedGalaxies).length,
-                  planets_discovered: rebirthSystem.discoveredPlanets.length,
-                  time_played: 0,
-                  portals_entered: rebirthCount,
-                  ascensions_completed: rebirthCount,
-                  cities_owned: buildings.reduce((a, b) => a + b.count, 0),
-                  click_count: 0,
-                  buildings_purchased: buildings.reduce((a, b) => a + b.count, 0)
-                }}
+                stats={stats}
                 onBuyGalaxy={handleBuyGalaxy}
                 onExploreGalaxy={handleExploreGalaxy}
                 onTravelGalaxy={handleTravelGalaxy}
+                onRequirementsShow={handleShowRequirements}
               />
             </div>
           </div>
