@@ -10,12 +10,16 @@ import NewsTicker from './components/NewsTicker';
 import SystemsUI from './components/SystemsUI';
 import CoxinhaMenu from './components/CoxinhaMenu';
 import MusicPlayer from './components/MusicPlayer';
+import RebirthPanel from './components/RebirthPanel';
+import GalaxyExplorer from './components/GalaxyExplorer';
 import { ComboSystem } from './systems/ComboSystem';
 import { RandomEvents } from './systems/RandomEvents';
 import { DailyQuests } from './systems/DailyQuests';
-import { Save, RotateCcw, Volume2, VolumeX, TrendingUp, Trophy, Zap, MousePointer2 } from 'lucide-react';
+import { RebirthSystem } from './systems/RebirthSystem';
+import { Save, RotateCcw, Volume2, VolumeX, TrendingUp, Trophy, Zap, MousePointer2, Sparkles } from 'lucide-react';
 
 const SAVE_KEY = 'coxinha_clicker_ultimate_2026';
+const REBIRTH_SAVE_KEY = 'coxinha_rebirth_system_2026';
 
 // --- Web Audio System ---
 const playSound = (type: 'click' | 'buy' | 'upgrade' | 'golden', enabled: boolean) => {
@@ -82,6 +86,13 @@ const App: React.FC = () => {
   const [buildings, setBuildings] = useState<Building[]>(INITIAL_BUILDINGS);
   const [upgrades, setUpgrades] = useState<Upgrade[]>(INITIAL_UPGRADES);
   
+  // Rebirth System State
+  const [rebirthSystem] = useState<RebirthSystem>(new RebirthSystem());
+  const [hotOilFragments, setHotOilFragments] = useState<number>(0);
+  const [rebirthCount, setRebirthCount] = useState<number>(0);
+  const [showGalaxyExplorer, setShowGalaxyExplorer] = useState<boolean>(false);
+  const [currentGalaxy, setCurrentGalaxy] = useState<string>('via_lactea');
+  
   // Computed values
   const [cps, setCps] = useState<number>(0);
   const [clickPower, setClickPower] = useState<number>(1);
@@ -120,7 +131,13 @@ const App: React.FC = () => {
   const saveGame = useCallback(() => {
     const gameState: GameState = { coxinhas, totalCoxinhas: lifetimeCoxinhas, startTime: Date.now(), buildings, upgrades, prestigeLevel: 0 };
     localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
-  }, [coxinhas, lifetimeCoxinhas, buildings, upgrades]);
+    
+    // Save rebirth system
+    if (rebirthSystem) {
+      const rebirthData = rebirthSystem.save();
+      localStorage.setItem(REBIRTH_SAVE_KEY, JSON.stringify(rebirthData));
+    }
+  }, [coxinhas, lifetimeCoxinhas, buildings, upgrades, rebirthSystem]);
 
   useEffect(() => {
     const saved = localStorage.getItem(SAVE_KEY);
@@ -134,6 +151,18 @@ const App: React.FC = () => {
         const mergedUpgrades = INITIAL_UPGRADES.map(iU => { const sU = parsed.upgrades.find(u => u.id === iU.id); return sU ? { ...iU, purchased: sU.purchased } : iU; });
         setUpgrades(mergedUpgrades);
       } catch (e) { console.error("Corrupted save", e); }
+    }
+
+    // Load rebirth system
+    const rebirthSaved = localStorage.getItem(REBIRTH_SAVE_KEY);
+    if (rebirthSaved && rebirthSystem) {
+      try {
+        const rebirthData = JSON.parse(rebirthSaved);
+        rebirthSystem.load(rebirthData);
+        setHotOilFragments(rebirthSystem.hotOilFragments);
+        setRebirthCount(rebirthSystem.rebirthCount);
+        setCurrentGalaxy(rebirthSystem.currentGalaxy || 'via_lactea');
+      } catch (e) { console.error("Corrupted rebirth save", e); }
     }
 
     // Initialize Game Systems with Callbacks (safely)
@@ -385,6 +414,80 @@ const App: React.FC = () => {
       } 
   };
 
+  const handleRebirth = () => {
+    const stats = {
+      total_coxinhas: lifetimeCoxinhas,
+      rebirths: rebirthCount,
+      galaxies_owned: Object.keys(rebirthSystem.ownedGalaxies).length,
+      planets_discovered: rebirthSystem.discoveredPlanets.length,
+      time_played: Math.floor((Date.now() - (rebirthSystem.lastRebirthTime || Date.now())) / 1000),
+      portals_entered: rebirthCount,
+      ascensions_completed: rebirthCount,
+      cities_owned: buildings.reduce((a, b) => a + b.count, 0),
+      click_count: 0,
+      buildings_purchased: buildings.reduce((a, b) => a + b.count, 0)
+    };
+
+    const fragmensGained = rebirthSystem.calculateRebirthGain(lifetimeCoxinhas, rebirthCount);
+    
+    // Reset game state on rebirth
+    setCoxinhas(0);
+    setLifetimeCoxinhas(0);
+    setBuildings(INITIAL_BUILDINGS);
+    setUpgrades(INITIAL_UPGRADES);
+    setCps(0);
+    frenzyMultiplierRef.current = 1;
+    
+    // Update rebirth system
+    rebirthSystem.hotOilFragments += fragmensGained;
+    rebirthSystem.rebirthCount += 1;
+    rebirthSystem.totalPrestige += fragmensGained;
+    rebirthSystem.lastRebirthTime = Date.now();
+    
+    // Save rebirth state
+    setHotOilFragments(rebirthSystem.hotOilFragments);
+    setRebirthCount(rebirthSystem.rebirthCount);
+    
+    addFloatingText(window.innerWidth/2, window.innerHeight/2, `Renascimento! +${Math.floor(fragmensGained)} Fragmentos!`, '#9333ea', true);
+    spawnParticles(window.innerWidth/2, window.innerHeight/2, 'golden', 50);
+    
+    saveGame();
+  };
+
+  const handleBuyGalaxy = (galaxyId: string) => {
+    const galaxy = (rebirthSystem.galaxies as any)[galaxyId];
+    if (!galaxy) return;
+    
+    if (hotOilFragments >= galaxy.cost) {
+      setHotOilFragments(h => h - galaxy.cost);
+      rebirthSystem.hotOilFragments -= galaxy.cost;
+      rebirthSystem.ownedGalaxies[galaxyId] = true;
+      setCurrentGalaxy(galaxyId);
+      rebirthSystem.currentGalaxy = galaxyId;
+      
+      addFloatingText(window.innerWidth/2, window.innerHeight/3, `${galaxy.name} Desbloqueada!`, '#06b6d4', true);
+      spawnParticles(window.innerWidth/2, window.innerHeight/2, 'golden', 30);
+      saveGame();
+    }
+  };
+
+  const handleExploreGalaxy = (galaxyId: string) => {
+    const planet = rebirthSystem.discoverPlanet(galaxyId);
+    if (planet) {
+      addFloatingText(window.innerWidth/2, window.innerHeight/3, `Planeta Descoberto: ${planet.name}!`, '#fbbf24', true);
+      setCurrentGalaxy(galaxyId);
+      rebirthSystem.currentGalaxy = galaxyId;
+      saveGame();
+    }
+  };
+
+  const handleTravelGalaxy = (galaxyId: string) => {
+    setCurrentGalaxy(galaxyId);
+    rebirthSystem.currentGalaxy = galaxyId;
+    addFloatingText(window.innerWidth/2, window.innerHeight/3, `Viajando para ${(rebirthSystem.galaxies as any)[galaxyId]?.name}...`, '#10b981', false);
+    saveGame();
+  };
+
   const cursorCount = buildings.find(b => b.id === 'cursor')?.count || 0;
 
   // Show Coxinha Menu if game hasn't started
@@ -477,8 +580,23 @@ const App: React.FC = () => {
                  </div>
             </div>
 
+            {/* Rebirth Panel */}
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <RebirthPanel 
+                hotOilFragments={hotOilFragments}
+                rebirthCount={rebirthCount}
+                totalCoxinhas={lifetimeCoxinhas}
+                prestige={rebirthCount}
+                nextRebirthFragments={Math.floor(rebirthSystem.calculateRebirthGain(lifetimeCoxinhas, rebirthCount))}
+                onRebirthClick={handleRebirth}
+              />
+            </div>
+
             <div className="mt-auto pt-4 border-t border-white/5 space-y-2">
                  <div className="text-[9px] text-center opacity-30 font-mono">{formatNumber(lifetimeCoxinhas)} Total Lifetime</div>
+                 <button onClick={() => setShowGalaxyExplorer(!showGalaxyExplorer)} className="w-full bg-purple-900/30 hover:bg-purple-800/40 text-purple-300 text-[10px] py-2 rounded border border-purple-700/30 uppercase font-bold transition-colors flex items-center justify-center gap-2">
+                    <Sparkles size={12}/> Galáxias
+                 </button>
                  <div className="flex gap-1">
                     <button onClick={saveGame} className="flex-1 bg-[#2c1810] hover:bg-[#3d2211] text-[#d4a574] text-[10px] py-2 rounded border border-[#d4a574]/20 uppercase font-bold transition-colors">Salvar</button>
                     <button onClick={reset} className="flex-1 bg-[#2c1810] hover:bg-red-900/30 text-red-400 text-[10px] py-2 rounded border border-red-900/20 uppercase font-bold transition-colors">Reset</button>
@@ -532,6 +650,47 @@ const App: React.FC = () => {
 
     </div>
       <MusicPlayer enabled={musicEnabled} volume={0.3} />
+
+      {/* Galaxy Explorer Modal */}
+      {showGalaxyExplorer && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#1a1a2e] rounded-2xl border-2 border-purple-500/30 shadow-2xl max-w-6xl w-full my-10">
+            <div className="flex justify-between items-center p-6 border-b border-purple-500/20 bg-[#16213e]">
+              <h2 className="text-2xl font-bold text-purple-300 flex items-center gap-2">
+                <Sparkles size={24} /> Exploração Galáctica
+              </h2>
+              <button 
+                onClick={() => setShowGalaxyExplorer(false)}
+                className="text-purple-400 hover:text-purple-300 text-3xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6 bg-gradient-to-b from-purple-900/20 to-black/20 max-h-[80vh] overflow-y-auto">
+              <GalaxyExplorer
+                rebirthSystem={rebirthSystem}
+                hotOilFragments={hotOilFragments}
+                currentGalaxy={currentGalaxy}
+                stats={{
+                  total_coxinhas: lifetimeCoxinhas,
+                  rebirths: rebirthCount,
+                  galaxies_owned: Object.keys(rebirthSystem.ownedGalaxies).length,
+                  planets_discovered: rebirthSystem.discoveredPlanets.length,
+                  time_played: 0,
+                  portals_entered: rebirthCount,
+                  ascensions_completed: rebirthCount,
+                  cities_owned: buildings.reduce((a, b) => a + b.count, 0),
+                  click_count: 0,
+                  buildings_purchased: buildings.reduce((a, b) => a + b.count, 0)
+                }}
+                onBuyGalaxy={handleBuyGalaxy}
+                onExploreGalaxy={handleExploreGalaxy}
+                onTravelGalaxy={handleTravelGalaxy}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
