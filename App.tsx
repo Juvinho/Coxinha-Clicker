@@ -87,9 +87,6 @@ const App: React.FC = () => {
   const frenzyTimerRef = useRef<number | null>(null);
   const frenzyMultiplierRef = useRef<number>(1); // To separate from permanent global multiplier
 
-  const lastTickRef = useRef<number>(Date.now());
-  const accumulatedCoxinhasRef = useRef<number>(0);
-
   // --- Logic ---
   const saveGame = useCallback(() => {
     const gameState: GameState = { coxinhas, totalCoxinhas: lifetimeCoxinhas, startTime: Date.now(), buildings, upgrades, prestigeLevel: 0 };
@@ -158,27 +155,19 @@ const App: React.FC = () => {
 
   }, [buildings, upgrades, frenzyActive]); // Recalc when these change
 
-  // Main Loop
+  // Main Loop - Fixed interval for reliable production counting
   useEffect(() => {
-    const loop = () => {
-      const now = Date.now();
-      const delta = (now - lastTickRef.current) / 1000;
-      lastTickRef.current = now;
-      
-      if (cps > 0) {
-        const earned = cps * Math.min(delta, 86400);
-        accumulatedCoxinhasRef.current += earned;
-        if (accumulatedCoxinhasRef.current > 0.5) { 
-             const add = accumulatedCoxinhasRef.current;
-             setCoxinhas(prev => prev + add);
-             setLifetimeCoxinhas(prev => prev + add);
-             accumulatedCoxinhasRef.current = 0;
-        }
-      }
-      requestAnimationFrame(loop);
-    };
-    const rafId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafId);
+    const interval = setInterval(() => {
+      setCoxinhas(prev => {
+        const deltaSeconds = 0.1; // 100ms = 0.1 seconds
+        const earned = cps * deltaSeconds;
+        const newTotal = prev + earned;
+        setLifetimeCoxinhas(prevLife => prevLife + earned);
+        return newTotal;
+      });
+    }, 100); // Update every 100ms for smooth, reliable production
+    
+    return () => clearInterval(interval);
   }, [cps]);
 
   const spawnParticles = (x: number, y: number, type: 'oil' | 'flour' | 'golden', count = 8) => {

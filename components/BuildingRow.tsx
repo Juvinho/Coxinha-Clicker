@@ -1,7 +1,6 @@
 import React from 'react';
 import { Building } from '../types';
-import { calculateBuildingCost, formatNumber } from '../utils';
-import { Plus, TrendingUp } from 'lucide-react';
+import { formatNumber, calculateBuildingCost } from '../utils';
 
 interface BuildingRowProps {
   building: Building;
@@ -10,51 +9,47 @@ interface BuildingRowProps {
 }
 
 const BuildingRow: React.FC<BuildingRowProps> = ({ building, canAfford, onBuy }) => {
-  const totalProduction = building.baseCps * building.count;
-  const nextCost = calculateBuildingCost(building.baseCost, building.count);
+  const currentCost = calculateBuildingCost(building.baseCost, building.count);
 
   return (
-    <div className="mb-3 p-3 bg-[#1a0f08] border border-[#3d2211] rounded-lg hover:border-[#ffaa00]/40 transition-colors group">
-      {/* Header with icon and name */}
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-start gap-2 flex-1">
-          <span className="text-2xl">{building.icon}</span>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-[#e5e5e5] text-sm truncate">{building.name}</h3>
-            <p className="text-[10px] text-gray-500 line-clamp-2">{building.description}</p>
+    <div 
+      className={`
+        relative flex flex-col p-3 rounded-lg border-l-2 transition-all duration-200 group select-none mb-2
+        ${canAfford 
+          ? 'bg-[#1a0f08] border-[#ffaa00] hover:bg-[#25160b] hover:translate-x-1 cursor-pointer' 
+          : 'bg-[#0f0705] border-[#3d2211] opacity-60 grayscale-[0.5] cursor-not-allowed'}
+      `}
+      style={{
+        boxShadow: canAfford ? 'inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 10px rgba(0,0,0,0.5)' : 'none'
+      }}
+      onClick={() => canAfford && onBuy()}
+    >
+      <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-3">
+              <div className="text-3xl filter drop-shadow-md">{building.icon}</div>
+              <div>
+                  <div className="font-bold text-sm text-[#e5e5e5]">{building.name}</div>
+                  <div className="text-[10px] text-gray-400 font-mono">
+                     {building.count} possuídos
+                  </div>
+              </div>
           </div>
-        </div>
-        <div className="text-right ml-2">
-          <div className="text-lg font-black text-[#ffaa00]">{building.count}</div>
-          <div className="text-[8px] text-gray-500 uppercase">Possui</div>
-        </div>
+          <div className="text-right">
+             <div className={`font-bold text-sm ${canAfford ? 'text-[#ffaa00]' : 'text-red-900'}`}>
+                {formatNumber(currentCost)}
+             </div>
+          </div>
+      </div>
+      
+      <div className="flex justify-between items-center border-t border-white/5 pt-1 mt-1">
+          <div className="text-[10px] text-gray-500">
+             Próx: <span className="text-gray-300">+{formatNumber(building.baseCps)} Cx/s</span>
+          </div>
+          {canAfford && <div className="text-[9px] text-[#ffaa00] animate-pulse font-bold tracking-wider">COMPRAR</div>}
       </div>
 
-      {/* Production stats */}
-      {building.count > 0 && (
-        <div className="flex items-center gap-1 mb-2 px-2 py-1 bg-black/30 rounded text-[10px]">
-          <TrendingUp size={12} className="text-[#39ff14]" />
-          <span className="text-[#39ff14] font-bold">{formatNumber(totalProduction)} Cx/s</span>
-          <span className="text-gray-500">({formatNumber(building.baseCps)}/un)</span>
-        </div>
-      )}
-
-      {/* Buy button */}
-      <button
-        onClick={onBuy}
-        disabled={!canAfford}
-        className={`w-full py-2 rounded-lg font-bold text-xs uppercase transition-all flex items-center justify-between px-3 ${
-          canAfford
-            ? 'bg-[#ffaa00] hover:bg-[#ffcc00] text-black active:scale-95 shadow-lg'
-            : 'bg-[#2c1810] text-gray-500 cursor-not-allowed opacity-50'
-        }`}
-      >
-        <span>Comprar por</span>
-        <div className="flex items-center gap-1">
-          <Plus size={12} />
-          <span className="font-black">{formatNumber(nextCost)}</span>
-        </div>
-      </button>
+      {/* 3D Bevel Highlight */}
+      <div className="absolute inset-0 rounded-lg shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)] pointer-events-none"></div>
     </div>
   );
 };

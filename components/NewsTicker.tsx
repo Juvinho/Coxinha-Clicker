@@ -1,59 +1,32 @@
 import React, { useState, useEffect } from 'react';
 
+const HEADLINES = [
+    "Cientistas confirmam: O universo tem formato de coxinha.",
+    "Preço da farinha cai após descoberta de mina de massa infinita.",
+    "Vovó Cozinheira ganha prêmio Nobel da Paz por receita secreta.",
+    "Nova tendência: Casamentos substituem bolo por torre de coxinhas.",
+    "Gatos agora preferem coxinhas a sachê, diz estudo.",
+    "Economistas sugerem adotar a Coxinha como moeda oficial do Brasil.",
+    "Alienígenas visitam a Terra e pedem 'uma de frango com catupiry'.",
+    "Fritadeira Industrial explode em sabor e cobre cidade de aroma.",
+    "Rei do Camarote afirma: 'Coxinha é o novo caviar'.",
+    "Clima: Previsão de chuva de azeite para o fim de semana.",
+    "Fãs acampam na porta da Pastelaria esperando lote fresco.",
+    "NASA detecta sinal de rádio vindo de Andrômeda: 'Tem ketchup?'."
+];
+
 const NewsTicker: React.FC = () => {
-  const newsList = [
-    '🎉 Bem-vindo ao Coxinha Clicker!',
-    '📰 Coxinhas fritas alcançam novo recorde!',
-    '👨‍🍳 Chef Tradicional satisfeito com produção',
-    '🌟 Golden Coxinhas avistadas no horizonte',
-    '🚀 Tecnologia de fritura revolucionada',
-    '🏆 Jogador atinge 1 milhão de coxinhas!',
-    '💪 Vovó cozinheira ganhou promoção',
-    '⚡ Frenesi de produção em andamento!',
-    '🎯 Próximo objetivo: 1 Trilhão de Coxinhas',
-    '🎪 Festival de Coxinha em São Paulo',
-  ];
+  const [activeHeadline, setActiveHeadline] = useState(HEADLINES[0]);
 
-  const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
-  const [displayedText, setDisplayedText] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    const currentNews = newsList[currentNewsIndex];
-    
-    if (!isDeleting) {
-      if (displayedText.length < currentNews.length) {
-        const timeout = setTimeout(() => {
-          setDisplayedText(currentNews.slice(0, displayedText.length + 1));
-        }, 50);
-        return () => clearTimeout(timeout);
-      } else {
-        // Wait before starting to delete
-        const timeout = setTimeout(() => {
-          setIsDeleting(true);
-        }, 3000);
-        return () => clearTimeout(timeout);
-      }
-    } else {
-      if (displayedText.length > 0) {
-        const timeout = setTimeout(() => {
-          setDisplayedText(displayedText.slice(0, -1));
-        }, 30);
-        return () => clearTimeout(timeout);
-      } else {
-        setIsDeleting(false);
-        setCurrentNewsIndex((prev) => (prev + 1) % newsList.length);
-      }
-    }
-  }, [displayedText, isDeleting, currentNewsIndex, newsList]);
-
+  // Rotate random headlines in CSS ticker if desired, but for simple CSS infinite scroll 
+  // we usually put all text in one long strip.
+  // Let's create a long string.
+  
   return (
-    <div className="w-full bg-[#120a06] border-b border-[#3d2211] p-3 z-20 overflow-hidden">
-      <div className="flex items-center gap-3 text-center">
-        <div className="text-xl animate-pulse">📢</div>
-        <div className="flex-1 text-sm font-bold text-[#ffaa00] min-h-6 tracking-wide">
-          {displayedText}
-          <span className="animate-pulse">|</span>
+    <div className="absolute top-0 left-0 w-full z-50 pointer-events-none">
+      <div className="ticker-wrap h-8 flex items-center bg-black/80 border-b border-amber-800">
+        <div className="ticker text-sm text-amber-100 font-mono tracking-wide">
+           {HEADLINES.join("  +++  ")}  +++  {HEADLINES.join("  +++  ")}
         </div>
       </div>
     </div>

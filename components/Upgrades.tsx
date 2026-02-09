@@ -1,7 +1,6 @@
 import React from 'react';
 import { Upgrade } from '../types';
 import { formatNumber } from '../utils';
-import { Zap } from 'lucide-react';
 
 interface UpgradesProps {
   upgrades: Upgrade[];
@@ -9,118 +8,47 @@ interface UpgradesProps {
   onBuy: (id: string, cost: number) => void;
 }
 
-const UpgradeCard: React.FC<{
-  upgrade: Upgrade;
-  canAfford: boolean;
-  onBuy: () => void;
-}> = ({ upgrade, canAfford, onBuy }) => {
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'click':
-        return 'border-blue-500/30 bg-blue-500/5';
-      case 'building':
-        return 'border-purple-500/30 bg-purple-500/5';
-      case 'global':
-        return 'border-green-500/30 bg-green-500/5';
-      case 'golden':
-        return 'border-yellow-500/30 bg-yellow-500/5';
-      case 'synergy':
-        return 'border-red-500/30 bg-red-500/5';
-      default:
-        return 'border-gray-500/30 bg-gray-500/5';
-    }
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'click':
-        return '👆';
-      case 'building':
-        return '🏢';
-      case 'global':
-        return '🌍';
-      case 'golden':
-        return '✨';
-      case 'synergy':
-        return '🔗';
-      default:
-        return '⭐';
-    }
-  };
-
-  if (upgrade.purchased) {
-    return (
-      <div className={`p-3 rounded-lg border ${getTypeColor(upgrade.type)} opacity-50 opacity-30 bg-green-500/10 border-green-500/30`}>
-        <div className="flex items-start gap-2">
-          <span className="text-lg">{getTypeIcon(upgrade.type)}</span>
-          <div>
-            <h4 className="font-bold text-xs text-green-400">✓ {upgrade.name}</h4>
-            <p className="text-[10px] text-gray-500">{upgrade.description}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <button
-      onClick={onBuy}
-      disabled={!canAfford}
-      className={`p-3 rounded-lg border text-left transition-all ${getTypeColor(upgrade.type)} ${
-        canAfford
-          ? 'hover:border-[#ffaa00] hover:bg-[#ffaa00]/10 cursor-pointer active:scale-95'
-          : 'opacity-40 cursor-not-allowed'
-      }`}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-start gap-2 flex-1">
-          <span className="text-lg">{getTypeIcon(upgrade.type)}</span>
-          <div>
-            <h4 className="font-bold text-xs text-[#e5e5e5]">{upgrade.name}</h4>
-            <p className="text-[10px] text-gray-500 line-clamp-2">{upgrade.description}</p>
-          </div>
-        </div>
-        <div className="text-right flex-shrink-0">
-          <div className="text-xs font-bold text-[#ffaa00]">{formatNumber(upgrade.cost)}</div>
-          <div className="text-[8px] text-gray-500">Custo</div>
-        </div>
-      </div>
-    </button>
-  );
-};
-
 const Upgrades: React.FC<UpgradesProps> = ({ upgrades, coxinhas, onBuy }) => {
   const availableUpgrades = upgrades.filter(u => !u.purchased);
-  const purchasedCount = upgrades.filter(u => u.purchased).length;
+  
+  if (availableUpgrades.length === 0) return (
+      <div className="w-full h-full flex flex-col items-center justify-center text-[#5c3a21] italic">
+          <span className="text-2xl mb-1 opacity-50">🔒</span>
+          Tecnologias esgotadas
+      </div>
+  );
 
   return (
-    <div className="space-y-2">
-      {/* Purchased summary */}
-      {purchasedCount > 0 && (
-        <div className="text-[10px] text-gray-500 italic mb-3">
-          {purchasedCount} pesquisa(s) concluída(s)
-        </div>
-      )}
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 pb-8">
+        {availableUpgrades.map(upgrade => {
+            const canBuy = coxinhas >= upgrade.cost;
+            return (
+              <div
+                key={upgrade.id}
+                className={`
+                  relative flex flex-col justify-between p-2 rounded border-b-2 transition-all duration-150 group overflow-hidden h-[100px]
+                  ${canBuy 
+                    ? 'bg-[#2a1810] border-[#ffaa00] hover:-translate-y-1 hover:bg-[#3d2211] cursor-pointer shadow-lg' 
+                    : 'bg-[#120a06] border-[#3d2211] opacity-40 cursor-not-allowed'}
+                `}
+                onClick={() => canBuy && onBuy(upgrade.id, upgrade.cost)}
+              >
+                <div className="flex justify-between items-start mb-1">
+                    <div className="bg-black/30 w-7 h-7 flex items-center justify-center rounded text-sm border border-white/5">✨</div>
+                    <div className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${canBuy ? 'bg-[#ffaa00]/10 text-[#ffaa00]' : 'text-red-700'}`}>
+                        {formatNumber(upgrade.cost)}
+                    </div>
+                </div>
 
-      {/* Available upgrades grid */}
-      <div className="grid grid-cols-1 gap-2">
-        {availableUpgrades.map(upgrade => (
-          <UpgradeCard
-            key={upgrade.id}
-            upgrade={upgrade}
-            canAfford={coxinhas >= upgrade.cost}
-            onBuy={() => onBuy(upgrade.id, upgrade.cost)}
-          />
-        ))}
-      </div>
-
-      {/* All completed message */}
-      {availableUpgrades.length === 0 && purchasedCount > 0 && (
-        <div className="text-center py-4 text-[10px] text-gray-500">
-          <Zap size={20} className="mx-auto mb-2 text-[#ffaa00]" />
-          <p>Todas as pesquisas foram concluídas!</p>
-        </div>
-      )}
+                <div>
+                    <div className="font-bold text-[#e5e5e5] text-[11px] leading-tight mb-0.5">{upgrade.name}</div>
+                    <div className="text-[9px] text-gray-500 leading-tight line-clamp-2">{upgrade.description}</div>
+                </div>
+                
+                {canBuy && <div className="absolute inset-0 bg-white/5 translate-y-full group-hover:translate-y-0 transition-transform duration-200 pointer-events-none"></div>}
+              </div>
+            );
+        })}
     </div>
   );
 };
