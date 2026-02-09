@@ -103,6 +103,13 @@ const App: React.FC = () => {
   const [questsCompleted, setQuestsCompleted] = useState<number>(0);
   const [eventNotifications, setEventNotifications] = useState<{id: number; message: string; icon: string; color: string; duration: number}[]>([]);
 
+  // --- Helper Functions (DEFINE EARLY) ---
+  const addFloatingText = (x: number, y: number, text: string, color: string, isBig: boolean) => {
+    const id = Date.now() + Math.random();
+    setFloatingTexts(p => [...p, { id, x, y, text, color, isBig }]);
+    setTimeout(() => setFloatingTexts(p => p.filter(t => t.id !== id)), 1200);
+  };
+
   // --- Logic ---
   const saveGame = useCallback(() => {
     const gameState: GameState = { coxinhas, totalCoxinhas: lifetimeCoxinhas, startTime: Date.now(), buildings, upgrades, prestigeLevel: 0 };
@@ -123,41 +130,47 @@ const App: React.FC = () => {
       } catch (e) { console.error("Corrupted save", e); }
     }
 
-    // Initialize Game Systems with Callbacks
-    comboSystemRef.current.callbacks.onCombo = (count) => {
-      addFloatingText(window.innerWidth/2, window.innerHeight/4, `${count} COMBO! 🔥`, '#ffaa00', true);
-      setComboCount(count);
-    };
-    
-    comboSystemRef.current.callbacks.onBreak = () => {
-      setComboCount(0);
-    };
-
-    randomEventsRef.current.callbacks.onEventTriggered = (event) => {
-      const eventMap: {[key: string]: {name: string; icon: string; color: string}} = {
-        'chuva_coxinhas': {name: 'Chuva de Coxinhas! ☔', icon: '🌧️', color: '#2196F3'},
-        'vovo_inspirada': {name: 'Vovó Inspirada! 👵', icon: '👵', color: '#FF69B4'},
-        'apagao': {name: 'Apagão! ⚫', icon: '⚫', color: '#222'},
-        'rush_hour': {name: 'Hora do Rush! 🚀', icon: '🚀', color: '#FF6B00'},
-        'fiscal': {name: 'Fiscal da Prefeitura! 👮', icon: '👮', color: '#FF0000'},
-        'cliente_vip': {name: 'Cliente VIP! 💎', icon: '💎', color: '#FFD700'},
+    // Initialize Game Systems with Callbacks (safely)
+    if (comboSystemRef.current) {
+      comboSystemRef.current.callbacks.onCombo = (count) => {
+        addFloatingText(window.innerWidth/2, window.innerHeight/4, `${count} COMBO! 🔥`, '#ffaa00', true);
+        setComboCount(count);
       };
       
-      const info = eventMap[event.id] || {name: event.name, icon: '✨', color: '#FFD700'};
-      setActiveEvent(info);
-      setEventNotifications(prev => [...prev, {
-        id: Date.now(),
-        message: event.message,
-        icon: info.icon,
-        color: info.color,
-        duration: 3000
-      }]);
-      
-      setTimeout(() => setActiveEvent(null), 2000);
-    };
+      comboSystemRef.current.callbacks.onBreak = () => {
+        setComboCount(0);
+      };
+    }
 
-    dailyQuestsRef.current.checkReset();
-    setQuestsCompleted(dailyQuestsRef.current.getCompletedCount());
+    if (randomEventsRef.current && randomEventsRef.current.callbacks) {
+      randomEventsRef.current.callbacks.onEventTriggered = (event: any) => {
+        const eventMap: {[key: string]: {name: string; icon: string; color: string}} = {
+          'chuva_coxinhas': {name: 'Chuva de Coxinhas! ☔', icon: '🌧️', color: '#2196F3'},
+          'vovo_inspirada': {name: 'Vovó Inspirada! 👵', icon: '👵', color: '#FF69B4'},
+          'apagao': {name: 'Apagão! ⚫', icon: '⚫', color: '#222'},
+          'rush_hour': {name: 'Hora do Rush! 🚀', icon: '🚀', color: '#FF6B00'},
+          'fiscal': {name: 'Fiscal da Prefeitura! 👮', icon: '👮', color: '#FF0000'},
+          'cliente_vip': {name: 'Cliente VIP! 💎', icon: '💎', color: '#FFD700'},
+        };
+        
+        const info = eventMap[event.id] || {name: event.name, icon: '✨', color: '#FFD700'};
+        setActiveEvent(info);
+        setEventNotifications(prev => [...prev, {
+          id: Date.now(),
+          message: event.message,
+          icon: info.icon,
+          color: info.color,
+          duration: 3000
+        }]);
+        
+        setTimeout(() => setActiveEvent(null), 2000);
+      };
+    }
+
+    if (dailyQuestsRef.current) {
+      dailyQuestsRef.current.checkReset();
+      setQuestsCompleted(dailyQuestsRef.current.getCompletedCount());
+    }
   }, []);
 
   useEffect(() => { const i = setInterval(saveGame, 30000); return () => clearInterval(i); }, [saveGame]);
@@ -166,14 +179,15 @@ const App: React.FC = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       // Update RandomEvents
-      randomEventsRef.current.update(0.016, { coxinhas, cps });
+      randomEventsRef.current?.update?.(0.016, { coxinhas, cps });
       
       // Update Daily Quests
-      dailyQuestsRef.current.checkReset();
-      setQuestsCompleted(dailyQuestsRef.current.getCompletedCount());
+      dailyQuestsRef.current?.checkReset?.();
+      const questsCount = dailyQuestsRef.current?.getCompletedCount?.() || 0;
+      setQuestsCompleted(questsCount);
       
       // Update quest progress
-      const currentQuest = dailyQuestsRef.current.quests[0];
+      const currentQuest = dailyQuestsRef.current?.quests?.[0];
       if (currentQuest) {
         const progress = (currentQuest.progress / currentQuest.goal) * 100;
         setQuestProgress(Math.min(progress, 100));
@@ -279,11 +293,11 @@ const App: React.FC = () => {
     playSound('click', soundEnabled);
     
     // Combo System
-    const comboMultiplier = comboSystemRef.current.onClick();
-    setComboCount(comboSystemRef.current.comboCount);
+    const comboMultiplier = comboSystemRef.current?.onClick?.() || 1;
+    setComboCount(comboSystemRef.current?.comboCount || 0);
     
     // Quest tracking
-    dailyQuestsRef.current.checkProgress('clicks', 1);
+    dailyQuestsRef.current?.checkProgress?.('clicks', 1);
     
     const isCrit = Math.random() < 0.02; // 2% crit
     let damage = clickPower * comboMultiplier; // Apply combo multiplier
@@ -305,7 +319,7 @@ const App: React.FC = () => {
       if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
       
       // Quest tracking
-      dailyQuestsRef.current.checkProgress('golden_clicked', 1);
+      dailyQuestsRef.current?.checkProgress?.('golden_clicked', 1);
       
       const type = Math.random() > 0.5 ? 'frenzy' : 'lucky';
       
@@ -326,18 +340,12 @@ const App: React.FC = () => {
           setLifetimeCoxinhas(p => p + gain);
           
           // Quest tracking
-          dailyQuestsRef.current.checkProgress('produced', gain);
+          dailyQuestsRef.current?.checkProgress?.('produced', gain);
           
           addFloatingText(window.innerWidth/2, window.innerHeight/3, `SORTE! +${formatNumber(gain)}`, '#39ff14', true);
       }
       
       spawnParticles(window.innerWidth/2, window.innerHeight/2, 'golden', 30);
-  };
-
-  const addFloatingText = (x: number, y: number, text: string, color: string, isBig: boolean) => {
-    const id = Date.now() + Math.random();
-    setFloatingTexts(p => [...p, { id, x, y, text, color, isBig }]);
-    setTimeout(() => setFloatingTexts(p => p.filter(t => t.id !== id)), 1200);
   };
 
   useEffect(() => {
@@ -358,7 +366,7 @@ const App: React.FC = () => {
       
       if(type === 'building') {
         spawnParticles(window.innerWidth * 0.8, window.innerHeight * 0.5, 'flour', 5);
-        dailyQuestsRef.current.checkProgress('buildings_bought', 1);
+        dailyQuestsRef.current?.checkProgress?.('buildings_bought', 1);
       }
     }
   };
