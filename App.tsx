@@ -8,7 +8,7 @@ import Upgrades from './components/Upgrades';
 import GoldenCoxinha from './components/GoldenCoxinha';
 import NewsTicker from './components/NewsTicker';
 import SystemsUI from './components/SystemsUI';
-import MainMenu from './components/MainMenu';
+import CoxinhaMenu from './components/CoxinhaMenu';
 import MusicPlayer from './components/MusicPlayer';
 import { ComboSystem } from './systems/ComboSystem';
 import { RandomEvents } from './systems/RandomEvents';
@@ -387,16 +387,20 @@ const App: React.FC = () => {
 
   const cursorCount = buildings.find(b => b.id === 'cursor')?.count || 0;
 
-  // Show Main Menu if game hasn't started
+  // Show Coxinha Menu if game hasn't started
   if (!gameStarted) {
     return (
       <>
-        <MainMenu 
-          onStart={() => setGameStarted(true)}
-          soundEnabled={soundEnabled}
-          onToggleSound={() => setSoundEnabled(!soundEnabled)}
-          musicPlaying={musicEnabled}
-          onToggleMusic={() => setMusicEnabled(!musicEnabled)}
+        <CoxinhaMenu 
+          onStartGame={() => setGameStarted(true)}
+          onContinueGame={() => setGameStarted(true)}
+          hasSave={!!localStorage.getItem(SAVE_KEY)}
+          stats={{
+            balance: Math.floor(coxinhas),
+            perSecond: Math.floor(cps),
+            perClick: Math.floor(clickPower),
+            bonus: globalMultiplier > 1 ? Math.floor((globalMultiplier - 1) * 100) : 0
+          }}
         />
         <MusicPlayer enabled={musicEnabled} volume={0.3} />
       </>
