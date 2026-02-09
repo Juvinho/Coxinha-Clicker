@@ -35,28 +35,33 @@ const BigCoxinha: React.FC<BigCoxinhaProps> = ({ onClick, cursorCount = 0 }) => 
           {cursors.map((_, i) => (
             <div
               key={i}
-              className="cursor-orbiter absolute top-1/2 left-1/2 w-6 h-6 -ml-3 -mt-3 transition-transform duration-500"
+              className="cursor-orbiter absolute top-1/2 left-1/2 transition-transform duration-500"
               style={{
                 transform: `rotate(${i * (360 / cursors.length)}deg) translateX(var(--orbit-radius)) rotate(-${i * (360 / cursors.length)}deg)`
               }}
             >
-              {/* Mouse Cursor Pointing to Center */}
+              {/* Cookie Clicker Style Cursor in Yellow */}
               <svg 
-                viewBox="0 0 24 24" 
-                width="24" 
-                height="24" 
-                style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.7))' }}
+                viewBox="0 0 32 32" 
+                width="28" 
+                height="28" 
+                style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))' }}
               >
-                {/* Modern mouse cursor arrow */}
-                <path 
-                  d="M 3 2 L 12 14 L 8 15 L 14 23 L 11 24 L 5 16 L 2 20 Z" 
-                  fill="#ffaa00" 
-                  stroke="rgba(120, 53, 15, 0.8)" 
-                  strokeWidth="0.8"
-                  strokeLinejoin="round"
-                />
-                {/* Glow effect */}
-                <circle cx="12" cy="12" r="10" fill="none" stroke="#ffaa00" opacity="0.3" strokeWidth="0.5" />
+                {/* Arrow pointing inward (toward coxinha) */}
+                <g fill="#ffaa00" stroke="#d4a574" strokeWidth="0.5">
+                  {/* Main arrow body */}
+                  <path 
+                    d="M 16 4 L 22 18 L 18 16 L 18 28 L 14 28 L 14 16 L 10 18 Z"
+                  />
+                  {/* Glow/shine effect */}
+                  <path 
+                    d="M 16 4 L 22 18 L 18 16 L 18 28 L 14 28 L 14 16 L 10 18 Z" 
+                    fill="none" 
+                    stroke="#ffff00" 
+                    strokeWidth="0.3" 
+                    opacity="0.6"
+                  />
+                </g>
               </svg>
             </div>
           ))}
