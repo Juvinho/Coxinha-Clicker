@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/CoxinhaMenu.css';
+import GalaxyModal from './GalaxyModal';
 
 interface CoxinhaMenuProps {
   onStartGame: () => void;
@@ -27,6 +28,8 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const [particles, setParticles] = useState<React.ReactNode[]>([]);
   const [galaxyUnlocked, setGalaxyUnlocked] = useState(false);
+  const [showGalaxyModal, setShowGalaxyModal] = useState(false);
+  const [saveData, setSaveData] = useState<any>(null);
   const [galaxyData, setGalaxyData] = useState({
     current: 'Via Láctea',
     system: 'Sistema Solar',
@@ -63,6 +66,7 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
         }
 
         const save = JSON.parse(saveData);
+        setSaveData(save);
         
         // Requirements: 10 ascensions, 100 portals, 1 septillion coxinhas
         const prestigeLevel = save.prestigeLevel || 0;
@@ -123,19 +127,7 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
       console.log('Abrir Exploração Galáctica');
       alert('🌌 EXPLORAÇÃO GALÁCTICA\n\nCarregando sistema de exploração galáctica...\n\n✨ Acesse 100+ galáxias\n💫 Descubra novos recursos cósmicos\n🛸 Recrute aliados alienígenas');
     } else {
-      alert(
-        '🌌 EXPLORAÇÃO GALÁCTICA\n\n' +
-        '🔒 Desbloqueie explorando o espaço!\n\n' +
-        'Requisitos:\n' +
-        '• Ascender 10 vezes (0/10)\n' +
-        '• Construir 100 Portais Dimensionais (0/100)\n' +
-        '• Produzir 1 Septilhão de coxinhas (0/1e24)\n\n' +
-        '✨ Recompensas:\n' +
-        '• Acesso a 100+ galáxias\n' +
-        '• Novos recursos cósmicos\n' +
-        '• Upgrades interdimensionais\n' +
-        '• Aliados alienígenas'
-      );
+      setShowGalaxyModal(true);
     }
   };
 
@@ -351,6 +343,13 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
           </div>
         </aside>
       </div>
+
+      {/* Galaxy Modal */}
+      <GalaxyModal 
+        isOpen={showGalaxyModal} 
+        onClose={() => setShowGalaxyModal(false)}
+        save={saveData}
+      />
 
       {/* Settings Modal */}
       {showSettings && (
