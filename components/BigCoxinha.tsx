@@ -35,25 +35,28 @@ const BigCoxinha: React.FC<BigCoxinhaProps> = ({ onClick, cursorCount = 0 }) => 
           {cursors.map((_, i) => (
             <div
               key={i}
-              className="cursor-orbiter absolute top-[65%] left-1/2 w-8 h-8 -ml-4 -mt-4 transition-transform duration-500"
+              className="cursor-orbiter absolute top-1/2 left-1/2 w-6 h-6 -ml-3 -mt-3 transition-transform duration-500"
               style={{
-                transform: `rotate(${i * (360 / cursors.length)}deg) translateX(var(--orbit-radius)) rotate(-45deg)`
+                transform: `rotate(${i * (360 / cursors.length)}deg) translateX(var(--orbit-radius)) rotate(-${i * (360 / cursors.length)}deg)`
               }}
             >
-              {/* White Mouse Cursor SVG */}
+              {/* Mouse Cursor Pointing to Center */}
               <svg 
                 viewBox="0 0 24 24" 
-                width="32" 
-                height="32" 
-                style={{ filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.5))' }}
+                width="24" 
+                height="24" 
+                style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.7))' }}
               >
+                {/* Modern mouse cursor arrow */}
                 <path 
-                  d="M5.5 2.5 L17.5 14.5 L11.5 15.5 L15.5 23.5 L12.5 24.5 L8.5 16.5 L3.5 20.5 Z" 
-                  fill="white" 
-                  stroke="#1a0f08" 
-                  strokeWidth="1.5" 
+                  d="M 3 2 L 12 14 L 8 15 L 14 23 L 11 24 L 5 16 L 2 20 Z" 
+                  fill="#ffaa00" 
+                  stroke="rgba(120, 53, 15, 0.8)" 
+                  strokeWidth="0.8"
                   strokeLinejoin="round"
                 />
+                {/* Glow effect */}
+                <circle cx="12" cy="12" r="10" fill="none" stroke="#ffaa00" opacity="0.3" strokeWidth="0.5" />
               </svg>
             </div>
           ))}
