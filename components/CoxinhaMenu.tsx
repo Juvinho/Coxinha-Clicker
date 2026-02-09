@@ -26,6 +26,15 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
 }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [particles, setParticles] = useState<React.ReactNode[]>([]);
+  const [galaxyUnlocked, setGalaxyUnlocked] = useState(false);
+  const [galaxyData, setGalaxyData] = useState({
+    current: 'Via Láctea',
+    system: 'Sistema Solar',
+    planet: 'Terra',
+    progress: 0,
+    galaxiesDiscovered: 0,
+    planetsVisited: 0
+  });
 
   // Create floating particles on mount
   useEffect(() => {
@@ -41,6 +50,42 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
       />
     ));
     setParticles(particleElements);
+  }, []);
+
+  // Check galaxy unlock status and load galaxy data
+  useEffect(() => {
+    const checkGalaxyUnlock = () => {
+      try {
+        const saveData = localStorage.getItem('coxinha_clicker_ultimate_2026');
+        if (!saveData) {
+          setGalaxyUnlocked(false);
+          return;
+        }
+
+        const save = JSON.parse(saveData);
+        
+        // Requirements: 10 ascensions, 100 portals, 1 septillion coxinhas
+        const prestigeLevel = save.prestigeLevel || 0;
+        const portalCount = save.buildings?.find((b: any) => b.id === 'portal')?.count || 0;
+        const totalCoxinhas = save.totalCoxinhas || 0;
+
+        const isUnlocked = prestigeLevel >= 10 && portalCount >= 100 && totalCoxinhas >= 1e24;
+        setGalaxyUnlocked(isUnlocked);
+
+        // Load galaxy data if exists
+        if (save.galaxy) {
+          setGalaxyData(prev => ({
+            ...prev,
+            ...save.galaxy
+          }));
+        }
+      } catch (e) {
+        console.error('Error checking galaxy unlock:', e);
+        setGalaxyUnlocked(false);
+      }
+    };
+
+    checkGalaxyUnlock();
   }, []);
 
   const handleNavigate = (path: string) => {
@@ -71,6 +116,27 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
 
   const handleCredits = () => {
     handleNavigate('Créditos');
+  };
+
+  const handleGalaxyExplorer = () => {
+    if (galaxyUnlocked) {
+      console.log('Abrir Exploração Galáctica');
+      alert('🌌 EXPLORAÇÃO GALÁCTICA\n\nCarregando sistema de exploração galáctica...\n\n✨ Acesse 100+ galáxias\n💫 Descubra novos recursos cósmicos\n🛸 Recrute aliados alienígenas');
+    } else {
+      alert(
+        '🌌 EXPLORAÇÃO GALÁCTICA\n\n' +
+        '🔒 Desbloqueie explorando o espaço!\n\n' +
+        'Requisitos:\n' +
+        '• Ascender 10 vezes (0/10)\n' +
+        '• Construir 100 Portais Dimensionais (0/100)\n' +
+        '• Produzir 1 Septilhão de coxinhas (0/1e24)\n\n' +
+        '✨ Recompensas:\n' +
+        '• Acesso a 100+ galáxias\n' +
+        '• Novos recursos cósmicos\n' +
+        '• Upgrades interdimensionais\n' +
+        '• Aliados alienígenas'
+      );
+    }
   };
 
   return (
@@ -132,6 +198,45 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
               <span className="progress-value">0</span>
             </div>
           </div>
+
+          {/* Galaxy Stats */}
+          <div className="galaxy-stats">
+            <div className="galaxy-title">
+              <span className="galaxy-icon">🌌</span>
+              Exploração Galáctica
+            </div>
+            
+            <div className="current-galaxy">
+              <div className="galaxy-name">{galaxyData.current}</div>
+              <div className="galaxy-location">
+                📍 {galaxyData.system} • {galaxyData.planet}
+              </div>
+            </div>
+
+            <div className="galaxy-progress">
+              <div className="galaxy-progress-label">
+                <span>Progresso de Exploração</span>
+                <span>{galaxyData.progress}%</span>
+              </div>
+              <div className="galaxy-progress-bar">
+                <div 
+                  className="galaxy-progress-fill" 
+                  style={{ width: `${galaxyData.progress}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="galaxy-quick-stats">
+              <div className="galaxy-quick-stat">
+                <div className="galaxy-quick-stat-value">{galaxyData.galaxiesDiscovered}</div>
+                <div className="galaxy-quick-stat-label">Galáxias</div>
+              </div>
+              <div className="galaxy-quick-stat">
+                <div className="galaxy-quick-stat-value">{galaxyData.planetsVisited}</div>
+                <div className="galaxy-quick-stat-label">Planetas</div>
+              </div>
+            </div>
+          </div>
         </aside>
 
         {/* Center Area - Menu */}
@@ -152,6 +257,17 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
               disabled={!hasSave}
             >
               💾 CONTINUAR
+            </button>
+
+            <button 
+              className="menu-btn galaxy" 
+              onClick={handleGalaxyExplorer}
+              title="Pressione G para abrir"
+            >
+              🌌 EXPLORAÇÃO GALÁCTICA
+              <span className={`btn-badge ${galaxyUnlocked ? 'unlocked' : 'new'}`}>
+                {galaxyUnlocked ? '✓ DESBLOQUEADO' : 'NOVO'}
+              </span>
             </button>
 
             <button className="menu-btn" onClick={handleLeaderboard}>

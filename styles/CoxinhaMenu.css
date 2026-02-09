@@ -199,6 +199,145 @@
 }
 
 /* ===========================
+   GALAXY STATS BOX
+   =========================== */
+
+.galaxy-stats {
+  background: linear-gradient(135deg, rgba(15, 5, 30, 0.95) 0%, rgba(30, 10, 50, 0.95) 100%);
+  border: 3px solid #8b5cf6;
+  border-radius: 15px;
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 
+    inset 0 0 30px rgba(139, 92, 246, 0.3),
+    0 0 30px rgba(139, 92, 246, 0.2);
+  animation: galaxyPulse 3s ease-in-out infinite;
+}
+
+@keyframes galaxyPulse {
+  0%, 100% {
+    box-shadow: inset 0 0 30px rgba(139, 92, 246, 0.3), 0 0 30px rgba(139, 92, 246, 0.2);
+  }
+  50% {
+    box-shadow: inset 0 0 40px rgba(139, 92, 246, 0.5), 0 0 50px rgba(139, 92, 246, 0.4);
+  }
+}
+
+.galaxy-title {
+  color: #c4b5fd;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.galaxy-icon {
+  font-size: 18px;
+  animation: rotate 10s linear infinite;
+  display: inline-block;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.current-galaxy {
+  background: rgba(139, 92, 246, 0.2);
+  border: 2px solid #8b5cf6;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.galaxy-name {
+  font-size: 16px;
+  color: #c4b5fd;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.galaxy-location {
+  font-size: 10px;
+  color: #a78bfa;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.galaxy-progress {
+  margin-top: 15px;
+}
+
+.galaxy-progress-label {
+  font-size: 9px;
+  color: #a78bfa;
+  margin-bottom: 5px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.galaxy-progress-bar {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.galaxy-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6 0%, #c4b5fd 100%);
+  width: 0%;
+  transition: width 1s ease;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+}
+
+.galaxy-quick-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.galaxy-quick-stat {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  transition: all 0.3s ease;
+}
+
+.galaxy-quick-stat:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.galaxy-quick-stat-value {
+  font-size: 16px;
+  color: #c4b5fd;
+  font-weight: 700;
+}
+
+.galaxy-quick-stat-label {
+  font-size: 8px;
+  color: #a78bfa;
+  text-transform: uppercase;
+  margin-top: 2px;
+  letter-spacing: 1px;
+}
+
+/* ===========================
    CENTER AREA - MENU
    =========================== */
 
@@ -365,6 +504,92 @@
 .menu-btn.disabled:hover {
   transform: none;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+/* Galaxy Button Styles */
+.menu-btn.galaxy {
+  background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%);
+  border-color: #8b5cf6;
+  animation: galaxyGlow 2s ease-in-out infinite;
+  position: relative;
+  overflow: visible;
+}
+
+.menu-btn.galaxy::after {
+  content: '✨';
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 24px;
+  display: inline-block;
+  animation: sparkle 1.5s ease-in-out infinite;
+}
+
+@keyframes galaxyGlow {
+  0%, 100% {
+    box-shadow: 
+      0 4px 15px rgba(0, 0, 0, 0.5),
+      0 0 20px rgba(139, 92, 246, 0.4),
+      inset 0 0 20px rgba(139, 92, 246, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 4px 15px rgba(0, 0, 0, 0.5),
+      0 0 40px rgba(139, 92, 246, 0.7),
+      inset 0 0 30px rgba(139, 92, 246, 0.2);
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0.5;
+    transform: translateY(-50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.2);
+  }
+}
+
+.menu-btn.galaxy:hover {
+  border-color: #c4b5fd;
+  box-shadow: 
+    0 8px 25px rgba(139, 92, 246, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Button Badge Styles */
+.btn-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-left: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.btn-badge.new {
+  background: #ef4444;
+  animation: badgePulse 1s ease-in-out infinite;
+  color: #fff;
+}
+
+.btn-badge.unlocked {
+  background: #22c55e;
+  animation: none;
+  color: #fff;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 .version-info {
