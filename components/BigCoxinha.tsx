@@ -40,27 +40,37 @@ const BigCoxinha: React.FC<BigCoxinhaProps> = ({ onClick, cursorCount = 0 }) => 
                 transform: `rotate(${i * (360 / cursors.length)}deg) translateX(var(--orbit-radius)) rotate(-${i * (360 / cursors.length)}deg)`
               }}
             >
-              {/* Cookie Clicker Style Cursor in Yellow */}
+              {/* Cookie Clicker Style Hand Cursor in Yellow */}
               <svg 
                 viewBox="0 0 32 32" 
-                width="28" 
-                height="28" 
+                width="32" 
+                height="32" 
                 style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))' }}
               >
-                {/* Arrow pointing inward (toward coxinha) */}
                 <g fill="#ffaa00" stroke="#d4a574" strokeWidth="0.5">
-                  {/* Main arrow body */}
-                  <path 
-                    d="M 16 4 L 22 18 L 18 16 L 18 28 L 14 28 L 14 16 L 10 18 Z"
-                  />
-                  {/* Glow/shine effect */}
-                  <path 
-                    d="M 16 4 L 22 18 L 18 16 L 18 28 L 14 28 L 14 16 L 10 18 Z" 
-                    fill="none" 
-                    stroke="#ffff00" 
-                    strokeWidth="0.3" 
-                    opacity="0.6"
-                  />
+                  {/* Wrist/Hand base */}
+                  <rect x="10" y="20" width="12" height="8" rx="2" />
+                  
+                  {/* Palm */}
+                  <circle cx="16" cy="14" r="7" />
+                  
+                  {/* Thumb */}
+                  <ellipse cx="11" cy="12" rx="2.5" ry="4" />
+                  
+                  {/* Index finger */}
+                  <ellipse cx="14" cy="6" rx="2.5" ry="5" />
+                  
+                  {/* Middle finger */}
+                  <ellipse cx="16" cy="4" rx="2.5" ry="6" />
+                  
+                  {/* Ring finger */}
+                  <ellipse cx="18" cy="6" rx="2.5" ry="5" />
+                  
+                  {/* Pinky finger */}
+                  <ellipse cx="21" cy="12" rx="2.5" ry="4" />
+                  
+                  {/* Shine/highlight on palm */}
+                  <circle cx="15" cy="12" r="2" fill="#ffff00" opacity="0.7" />
                 </g>
               </svg>
             </div>
