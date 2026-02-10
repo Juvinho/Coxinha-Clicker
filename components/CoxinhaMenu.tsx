@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../styles/CoxinhaMenuModern.css';
+import '../styles/CoxinhaMenuDesign2026.css';
 import GalaxyModal from './GalaxyModal';
 import { Settings, Play } from 'lucide-react';
 
@@ -133,6 +133,11 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
   };
   return (
     <div className="coxinha-menu">
+      {/* Progress Bar - Top Animated */}
+      <div className="progress-bar" style={{
+        width: `${Math.min((stats.perSecond || 0) / 1000 * 100, 100)}%`
+      }}></div>
+
       {/* Animated Particles Background */}
       <div className="particles">
         {particles}
