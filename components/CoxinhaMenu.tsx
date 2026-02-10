@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import '../styles/CoxinhaMenu.css';
+import '../styles/CoxinhaMenuModern.css';
 import GalaxyModal from './GalaxyModal';
+import { Settings, Play } from 'lucide-react';
 
 interface CoxinhaMenuProps {
   onStartGame: () => void;
@@ -130,7 +131,6 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
       setShowGalaxyModal(true);
     }
   };
-
   return (
     <div className="coxinha-menu">
       {/* Animated Particles Background */}
@@ -144,94 +144,80 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
         onClick={() => setShowSettings(!showSettings)}
         title="Configurações"
       >
-        ⚙️
+        <Settings size={24} />
       </button>
 
       <div className="menu-container">
-        {/* Left Sidebar - Stats */}
+        {/* Left Sidebar - Game Stats (Modern Glassmorphism) */}
         <aside className="left-sidebar">
+          {/* Main Stats Box */}
           <div className="stats-box">
             <div className="stats-title">Saldo Atual</div>
-            <div className="balance">{stats.balance?.toLocaleString('pt-BR')}</div>
+            <div className="balance">{stats.balance?.toLocaleString('pt-BR') || '0'}</div>
             <div className="balance-label">Coxinhas</div>
 
             <div className="velocity">
-              <div className="stats-title">Velocidade</div>
+              <div className="stats-title" style={{ marginBottom: '8px' }}>Velocidade</div>
               <div className="velocity-value">
-                {stats.perSecond || 0} Cx/s
+                {stats.perSecond?.toLocaleString('pt-BR') || '0'} Cx/s
               </div>
             </div>
 
             <div className="stats-row">
               <div className="stat-item">
-                <div className="stat-value">{stats.perClick || 1}</div>
-                <div className="stat-label">Por clique</div>
+                <div className="stat-value">{stats.perClick?.toLocaleString('pt-BR') || '1'}</div>
+                <div className="stat-label">Por Clique</div>
               </div>
               <div className="stat-item">
-                <div className="stat-value">{stats.bonus || 0}%</div>
+                <div className="stat-value">{stats.bonus || '0'}%</div>
                 <div className="stat-label">Bônus</div>
               </div>
             </div>
           </div>
 
-          {/* Additional Stats */}
-          <div className="stats-box" style={{ marginTop: '20px' }}>
-            <div className="stats-title">Progresso</div>
-            <div className="progress-item">
-              <span>Computadores</span>
-              <span className="progress-value">0</span>
-            </div>
-            <div className="progress-item">
-              <span>Granjas</span>
-              <span className="progress-value">0</span>
-            </div>
-            <div className="progress-item">
-              <span>Fábricas</span>
-              <span className="progress-value">0</span>
-            </div>
-          </div>
+          {/* Galaxy Stats Section */}
+          {galaxyData && (
+            <div className="galaxy-stats">
+              <div className="galaxy-title">
+                <span className="galaxy-icon">🌌</span>
+                Exploração Galáctica
+              </div>
+              
+              <div className="current-galaxy">
+                <div className="galaxy-name">{galaxyData.current}</div>
+                <div className="galaxy-location">
+                  📍 {galaxyData.system} • {galaxyData.planet}
+                </div>
+              </div>
 
-          {/* Galaxy Stats */}
-          <div className="galaxy-stats">
-            <div className="galaxy-title">
-              <span className="galaxy-icon">🌌</span>
-              Exploração Galáctica
-            </div>
-            
-            <div className="current-galaxy">
-              <div className="galaxy-name">{galaxyData.current}</div>
-              <div className="galaxy-location">
-                📍 {galaxyData.system} • {galaxyData.planet}
+              <div className="galaxy-progress" style={{ marginBottom: '8px' }}>
+                <div className="galaxy-progress-label" style={{ fontSize: '11px', marginBottom: '6px' }}>
+                  <span>Exploração</span>
+                  <span>{galaxyData.progress || 0}%</span>
+                </div>
+                <div className="galaxy-progress-bar">
+                  <div 
+                    className="galaxy-progress-fill" 
+                    style={{ width: `${galaxyData.progress || 0}%` }}
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="galaxy-progress">
-              <div className="galaxy-progress-label">
-                <span>Progresso de Exploração</span>
-                <span>{galaxyData.progress}%</span>
-              </div>
-              <div className="galaxy-progress-bar">
-                <div 
-                  className="galaxy-progress-fill" 
-                  style={{ width: `${galaxyData.progress}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="galaxy-quick-stats">
-              <div className="galaxy-quick-stat">
-                <div className="galaxy-quick-stat-value">{galaxyData.galaxiesDiscovered}</div>
-                <div className="galaxy-quick-stat-label">Galáxias</div>
-              </div>
-              <div className="galaxy-quick-stat">
-                <div className="galaxy-quick-stat-value">{galaxyData.planetsVisited}</div>
-                <div className="galaxy-quick-stat-label">Planetas</div>
+              <div className="galaxy-quick-stats">
+                <div className="galaxy-quick-stat">
+                  <div className="galaxy-quick-stat-value">{galaxyData.galaxiesDiscovered || 0}</div>
+                  <div className="galaxy-quick-stat-label">Galáxias</div>
+                </div>
+                <div className="galaxy-quick-stat">
+                  <div className="galaxy-quick-stat-value">{galaxyData.planetsVisited || 0}</div>
+                  <div className="galaxy-quick-stat-label">Planetas</div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </aside>
 
-        {/* Center Area - Menu */}
+        {/* Center Area - Main Menu */}
         <main className="center-area">
           <div className="logo">
             <h1>🍗 COXINHA</h1>
@@ -239,107 +225,143 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
           </div>
 
           <div className="menu-buttons">
-            <button className="menu-btn primary" onClick={onStartGame}>
-              ▶ JOGAR
-            </button>
+            {hasSave && (
+              <button 
+                className="menu-btn secondary" 
+                onClick={handleContinue}
+                title="Continuar seu jogo anterior"
+              >
+                ▶ CONTINUAR JOGO
+              </button>
+            )}
 
             <button 
-              className={`menu-btn ${!hasSave ? 'disabled' : ''}`} 
-              onClick={handleContinue}
-              disabled={!hasSave}
+              className="menu-btn primary" 
+              onClick={onStartGame}
+              title="Iniciar novo jogo"
             >
-              💾 CONTINUAR
+              <Play size={18} style={{ marginRight: '8px' }} />
+              JOGAR
             </button>
 
             <button 
-              className="menu-btn galaxy" 
+              className="menu-btn featured" 
               onClick={handleGalaxyExplorer}
-              title="Pressione G para abrir"
+              title="Exploração Galáctica - NOVO RECURSO"
             >
               🌌 EXPLORAÇÃO GALÁCTICA
-              <span className={`btn-badge ${galaxyUnlocked ? 'unlocked' : 'new'}`}>
-                {galaxyUnlocked ? '✓ DESBLOQUEADO' : 'NOVO'}
-              </span>
             </button>
 
-            <button className="menu-btn" onClick={handleLeaderboard}>
-              🏆 CLASSIFICAÇÃO
+            <button 
+              className="menu-btn secondary" 
+              onClick={handleLeaderboard}
+              title="Ver ranking de jogadores"
+            >
+              🏆 RANKING
             </button>
 
-            <button className="menu-btn" onClick={handleAchievements}>
+            <button 
+              className="menu-btn secondary" 
+              onClick={handleAchievements}
+              title="Ver suas conquistas"
+            >
               ⭐ CONQUISTAS
             </button>
 
-            <button className="menu-btn disabled" onClick={handleMultiplayer}>
-              👥 MULTIPLAYER
-              <span style={{ fontSize: '14px', marginLeft: '10px' }}>(Em Breve)</span>
-            </button>
-
-            <button className="menu-btn" onClick={() => setShowSettings(true)}>
-              ⚙️ CONFIGURAÇÕES
-            </button>
-
-            <button className="menu-btn" onClick={handleCredits}>
+            <button 
+              className="menu-btn secondary" 
+              onClick={handleCredits}
+              title="Créditos"
+            >
               📜 CRÉDITOS
             </button>
           </div>
-
-          {/* Version Info */}
-          <div className="version-info">
-            <div>Coxinha Clicker v1.0.0 <span className="beta-badge">COMPLETO</span></div>
-            <div style={{ marginTop: '5px', fontSize: '10px' }}>
-              2,250+ Funcionalidades • 17 Sistemas • Infinito 🎮
-            </div>
-          </div>
         </main>
 
-        {/* Right Sidebar - Research Preview */}
+        {/* Right Sidebar - Research/Features Preview */}
         <aside className="right-sidebar">
-          <div className="research-panel">
-            <div className="research-header">
-              <span className="research-icon">🔬</span>
-              <div>
-                <div className="research-title">Pesquisa</div>
+          {/* Core Systems */}
+          <div className="research-section">
+            <div className="research-title">
+              <span className="research-icon">⚙️</span>
+              Sistemas Principais
+            </div>
+
+            <div className="research-item">
+              <div className="research-icon-box">🔄</div>
+              <div className="research-info">
+                <div className="research-name">Sistema de Rebirth</div>
+                <div className="research-status unlocked">✓ Desbloqueado</div>
               </div>
             </div>
 
-            <ResearchItem
-              icon="🔥"
-              name="Dedos Reforçados"
-              desc="O cursor produz 2x mais coxinhas"
-              price="100"
-            />
+            <div className="research-item">
+              <div className="research-icon-box">🎯</div>
+              <div className="research-info">
+                <div className="research-name">Missões Diárias</div>
+                <div className="research-status unlocked">✓ Ativo</div>
+              </div>
+            </div>
 
-            <ResearchItem
-              icon="👵"
-              name="Livro de Receitas"
-              desc="Vovós produzem 2x mais coxinhas"
-              price="1.000"
-            />
+            <div className="research-item">
+              <div className="research-icon-box">🎭</div>
+              <div className="research-info">
+                <div className="research-name">Combos Dinâmicos</div>
+                <div className="research-status unlocked">✓ Ativo</div>
+              </div>
+            </div>
+          </div>
 
-            <ResearchItem
-              icon="⚡"
-              name="Dedo Elétrico"
-              desc="Ainda trabalhando nessa tecnologia"
-              price="???"
-              locked={true}
-            />
+          {/* Features Available */}
+          <div className="research-section">
+            <div className="research-title">
+              <span className="research-icon">✨</span>
+              Recursos
+            </div>
 
-            <ResearchItem
-              icon="🍴"
-              name="Massa Perfeita"
-              desc="Necessário: 100 Vovós"
-              price="???"
-              locked={true}
-            />
+            <div className="research-item">
+              <div className="research-icon-box">💾</div>
+              <div className="research-info">
+                <div className="research-name">Save/Load Automático</div>
+                <div className="research-status unlocked">✓ Ativo</div>
+              </div>
+            </div>
 
-            <ResearchItem
-              icon="🚀"
-              name="Foguete Coxinha"
-              desc="Lança coxinhas para o espaço"
-              price="???"
-              locked={true}
-            />
+            <div className="research-item">
+              <div className="research-icon-box">🎵</div>
+              <div className="research-info">
+                <div className="research-name">Música Dinâmica</div>
+                <div className="research-status unlocked">✓ Ativo</div>
+              </div>
+            </div>
+
+            <div className="research-item">
+              <div className="research-icon-box">📱</div>
+              <div className="research-info">
+                <div className="research-name">Cross Platform</div>
+                <div className="research-status unlocked">✓ Ativo</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats Summary */}
+          <div className="research-section">
+            <div className="research-title">
+              <span className="research-icon">📊</span>
+              Estatística da Versão
+            </div>
+
+            <div style={{ padding: '8px', color: '#a0aec0', fontSize: '12px' }}>
+              <div style={{ marginBottom: '8px' }}>
+                <strong style={{ color: '#c7d2fe' }}>v1.0.0</strong> - COMPLETO
+              </div>
+              <div style={{ fontSize: '11px', lineHeight: '1.6' }}>
+                ✓ 2,450+ Funcionalidades<br/>
+                ✓ 17 Sistemas Principais<br/>
+                ✓ 200+ Minigames<br/>
+                ✓ Infinito Replayability
+              </div>
+            </div>
           </div>
         </aside>
       </div>
@@ -363,8 +385,8 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
 interface ResearchItemProps {
   icon: string;
   name: string;
-  desc: string;
-  price: string;
+  desc?: string;
+  price?: string;
   locked?: boolean;
 }
 
@@ -376,16 +398,10 @@ const ResearchItem: React.FC<ResearchItemProps> = ({
   locked = false 
 }) => (
   <div className={`research-item ${locked ? 'locked' : ''}`}>
-    <div className="research-item-icon">{icon}</div>
-    <div className="research-item-info">
-      <div className="research-item-name">{name}</div>
-      <div className="research-item-desc">{desc}</div>
-    </div>
-    <div className="research-item-price">
-      <div className="research-price-value">{price}</div>
-      <div className="research-price-label">
-        {locked ? 'Bloqueado' : 'Coxinhas'}
-      </div>
+    <div className="research-icon-box">{icon}</div>
+    <div className="research-info">
+      <div className="research-name">{name}</div>
+      {desc && <div className="research-status">{desc}</div>}
     </div>
   </div>
 );
@@ -396,71 +412,69 @@ interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
-  const [volume, setVolume] = useState(70);
-  const [sfx, setSfx] = useState(true);
-  const [music, setMusic] = useState(true);
-
   return (
-    <div className="settings-modal-overlay" onClick={onClose}>
-      <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="settings-header">
-          <h2>⚙️ CONFIGURAÇÕES</h2>
-          <button className="close-btn" onClick={onClose}>✕</button>
+    <div className="settings-modal-overlay" onClick={onClose} style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.7)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      backdropFilter: 'blur(4px)'
+    }}>
+      <div className="settings-modal" onClick={(e) => e.stopPropagation()} style={{
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(139,92,246,0.05) 100%)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255,200,100,0.2)',
+        borderRadius: '16px',
+        padding: '24px',
+        maxWidth: '400px',
+        width: '90%',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '24px'
+        }}>
+          <h2 style={{ margin: 0, color: '#ffaa00', fontSize: '20px', fontWeight: '700' }}>
+            ⚙️ CONFIGURAÇÕES
+          </h2>
+          <button onClick={onClose} style={{
+            background: 'none',
+            border: 'none',
+            color: '#fbbf24',
+            fontSize: '24px',
+            cursor: 'pointer'
+          }}>✕</button>
         </div>
 
-        <div className="settings-content">
-          <div className="setting-group">
-            <label>🔊 Volume</label>
-            <input 
-              type="range" 
-              min="0" 
-              max="100" 
-              value={volume}
-              onChange={(e) => setVolume(parseInt(e.target.value))}
-              className="volume-slider"
-            />
-            <span className="volume-value">{volume}%</span>
-          </div>
-
-          <div className="setting-group">
-            <label>
-              <input 
-                type="checkbox" 
-                checked={music}
-                onChange={() => setMusic(!music)}
-              />
-              🎵 Música de Fundo
-            </label>
-          </div>
-
-          <div className="setting-group">
-            <label>
-              <input 
-                type="checkbox" 
-                checked={sfx}
-                onChange={() => setSfx(!sfx)}
-              />
-              🔔 Efeitos Sonoros
-            </label>
-          </div>
-
-          <div className="setting-group">
-            <label>🌙 Modo Escuro</label>
-            <input type="checkbox" defaultChecked className="toggle-checkbox" />
-          </div>
-
-          <div className="setting-group">
-            <label>🎨 Qualidade Gráfica</label>
-            <select className="settings-select">
-              <option>Alta (60 FPS)</option>
-              <option>Médio (30 FPS)</option>
-              <option>Baixa (15 FPS)</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="settings-footer">
-          <button className="settings-btn-secondary" onClick={onClose}>✓ FECHAR</button>
+        <div style={{ marginTop: '20px', textAlign: 'center' }}>
+          <p style={{ color: '#a0aec0', fontSize: '14px' }}>
+            As configurações avançadas estarão disponíveis em breve! 🎮
+          </p>
+          <button onClick={onClose} style={{
+            marginTop: '16px',
+            padding: '10px 24px',
+            background: 'linear-gradient(135deg, rgba(249,115,22,0.2), rgba(249,115,22,0.1))',
+            border: '2px solid rgba(249,115,22,0.4)',
+            borderRadius: '8px',
+            color: '#ffaa00',
+            cursor: 'pointer',
+            fontWeight: '700',
+            transition: 'all 0.3s ease'
+          }} onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(249,115,22,0.3), rgba(249,115,22,0.2))';
+          }} onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(249,115,22,0.2), rgba(249,115,22,0.1))';
+          }}>
+            ✓ FECHAR
+          </button>
         </div>
       </div>
     </div>
