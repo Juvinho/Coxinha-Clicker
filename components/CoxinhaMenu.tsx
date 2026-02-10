@@ -148,75 +148,6 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
       </button>
 
       <div className="menu-container">
-        {/* Left Sidebar - Game Stats (Modern Glassmorphism) */}
-        <aside className="left-sidebar">
-          {/* Main Stats Box */}
-          <div className="stats-box">
-            <div className="stats-title">Saldo Atual</div>
-            <div className="balance">{stats.balance?.toLocaleString('pt-BR') || '0'}</div>
-            <div className="balance-label">Coxinhas</div>
-
-            <div className="velocity">
-              <div className="stats-title" style={{ marginBottom: '8px' }}>Velocidade</div>
-              <div className="velocity-value">
-                {stats.perSecond?.toLocaleString('pt-BR') || '0'} Cx/s
-              </div>
-            </div>
-
-            <div className="stats-row">
-              <div className="stat-item">
-                <div className="stat-value">{stats.perClick?.toLocaleString('pt-BR') || '1'}</div>
-                <div className="stat-label">Por Clique</div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-value">{stats.bonus || '0'}%</div>
-                <div className="stat-label">Bônus</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Galaxy Stats Section */}
-          {galaxyData && (
-            <div className="galaxy-stats">
-              <div className="galaxy-title">
-                <span className="galaxy-icon">🌌</span>
-                Exploração Galáctica
-              </div>
-              
-              <div className="current-galaxy">
-                <div className="galaxy-name">{galaxyData.current}</div>
-                <div className="galaxy-location">
-                  📍 {galaxyData.system} • {galaxyData.planet}
-                </div>
-              </div>
-
-              <div className="galaxy-progress" style={{ marginBottom: '8px' }}>
-                <div className="galaxy-progress-label" style={{ fontSize: '11px', marginBottom: '6px' }}>
-                  <span>Exploração</span>
-                  <span>{galaxyData.progress || 0}%</span>
-                </div>
-                <div className="galaxy-progress-bar">
-                  <div 
-                    className="galaxy-progress-fill" 
-                    style={{ width: `${galaxyData.progress || 0}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="galaxy-quick-stats">
-                <div className="galaxy-quick-stat">
-                  <div className="galaxy-quick-stat-value">{galaxyData.galaxiesDiscovered || 0}</div>
-                  <div className="galaxy-quick-stat-label">Galáxias</div>
-                </div>
-                <div className="galaxy-quick-stat">
-                  <div className="galaxy-quick-stat-value">{galaxyData.planetsVisited || 0}</div>
-                  <div className="galaxy-quick-stat-label">Planetas</div>
-                </div>
-              </div>
-            </div>
-          )}
-        </aside>
-
         {/* Center Area - Main Menu */}
         <main className="center-area">
           <div className="logo">
@@ -380,6 +311,75 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
             </div>
           </div>
         </aside>
+      </div>
+
+      {/* Bottom Stats Bar - Experience/Level */}
+      <div className="bottom-stats-bar">
+        {/* Main Stats Box */}
+        <div className="stats-box bottom-stats">
+          <div className="stats-title">Saldo Atual</div>
+          <div className="balance">{stats.balance?.toLocaleString('pt-BR') || '0'}</div>
+          <div className="balance-label">Coxinhas</div>
+
+          <div className="velocity">
+            <div className="stats-title" style={{ marginBottom: '8px' }}>Velocidade</div>
+            <div className="velocity-value">
+              {stats.perSecond?.toLocaleString('pt-BR') || '0'} Cx/s
+            </div>
+          </div>
+
+          <div className="stats-row">
+            <div className="stat-item">
+              <div className="stat-value">{stats.perClick?.toLocaleString('pt-BR') || '1'}</div>
+              <div className="stat-label">Por Clique</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-value">{stats.bonus || '0'}%</div>
+              <div className="stat-label">Bônus</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Galaxy Stats Section */}
+        {galaxyData && (
+          <div className="galaxy-stats bottom-galaxy-stats">
+            <div className="galaxy-title">
+              <span className="galaxy-icon">🌌</span>
+              Exploração Galáctica
+            </div>
+            
+            <div className="current-galaxy">
+              <div className="galaxy-name">{galaxyData.current}</div>
+              <div className="galaxy-location">
+                📍 {galaxyData.system} • {galaxyData.planet}
+              </div>
+            </div>
+
+            <div className="galaxy-progress" style={{ marginBottom: '8px' }}>
+              <div className="galaxy-progress-label" style={{ fontSize: '11px', marginBottom: '6px' }}>
+                <span>Exploração</span>
+                <span>{galaxyData.progress || 0}%</span>
+              </div>
+              <div className="galaxy-progress-bar">
+                <div 
+                  className="galaxy-progress-fill" 
+                  style={{ width: `${galaxyData.progress || 0}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="galaxy-quick-stats">
+              <div className="galaxy-quick-stat">
+                <div className="galaxy-quick-stat-value">{galaxyData.galaxiesDiscovered || 0}</div>
+                <div className="galaxy-quick-stat-label">Galáxias</div>
+              </div>
+              <div className="galaxy-quick-stat">
+                <div className="galaxy-quick-stat-value">{galaxyData.planetsVisited || 0}</div>
+                <div className="galaxy-quick-stat-label">Planetas</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Galaxy Modal */}

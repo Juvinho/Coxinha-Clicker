@@ -74,9 +74,9 @@
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 40px 20px 20px 20px;
   display: grid;
-  grid-template-columns: 320px 1fr 300px;
+  grid-template-columns: 1fr 300px;
   gap: 30px;
   animation: containerFadeIn 0.8s ease-out;
 }
@@ -93,16 +93,11 @@
 }
 
 /* ===========================
-   LEFT SIDEBAR - STATS (Glassmorphism)
+   LEFT SIDEBAR - STATS (Glassmorphism) - HIDDEN
    =========================== */
 
 .left-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding-right: 10px;
+  display: none;
 }
 
 .stats-box {
@@ -601,7 +596,68 @@
 }
 
 /* ===========================
-   RIGHT SIDEBAR - RESEARCH
+   BOTTOM STATS BAR
+   =========================== */
+
+.bottom-stats-bar {
+  width: 100%;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255, 200, 100, 0.15);
+  padding: 20px 40px;
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  animation: slideInUp 0.6s ease-out 0.3s both;
+}
+
+.stats-box.bottom-stats {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 200, 100, 0.15);
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.galaxy-stats.bottom-galaxy-stats {
+  background: rgba(6, 182, 212, 0.08);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  backdrop-filter: blur(8px);
+}
+
+/* ===========================
+   BOTTOM STATS BAR
+   =========================== */
+
+.bottom-stats-bar {
+  width: 100%;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255, 200, 100, 0.15);
+  padding: 20px 40px;
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  animation: slideInUp 0.6s ease-out 0.3s both;
+}
+
+.stats-box.bottom-stats {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 200, 100, 0.15);
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.galaxy-stats.bottom-galaxy-stats {
+  background: rgba(6, 182, 212, 0.08);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  backdrop-filter: blur(8px);
+}
    =========================== */
 
 .right-sidebar {
@@ -764,13 +820,8 @@
     gap: 20px;
   }
 
-  .left-sidebar,
   .right-sidebar {
     max-height: none;
-  }
-
-  .center-area {
-    order: -1;
   }
 }
 
@@ -808,6 +859,11 @@
     width: 48px;
     height: 48px;
     font-size: 20px;
+  }
+
+  .bottom-stats-bar {
+    grid-template-columns: 1fr;
+    padding: 15px 16px;
   }
 }
 
@@ -858,6 +914,12 @@
   /* Hide galaxy stats on mobile */
   .galaxy-stats {
     display: none;
+  }
+
+  .bottom-stats-bar {
+    grid-template-columns: 1fr;
+    padding: 12px 12px;
+    margin-top: 8px;
   }
 }
 
