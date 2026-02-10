@@ -240,18 +240,34 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
               onClick={onStartGame}
               title="Iniciar novo jogo"
             >
-              <Play size={18} style={{ marginRight: '8px' }} />
+              <Play size={20} style={{ marginRight: '8px' }} />
               JOGAR
             </button>
+          </div>
 
-            <button 
-              className="menu-btn featured" 
-              onClick={handleGalaxyExplorer}
-              title="Exploração Galáctica - NOVO RECURSO"
-            >
-              🌌 EXPLORAÇÃO GALÁCTICA
-            </button>
+          {/* Galaxy Explorer Card */}
+          <div className="galaxy-feature-card" onClick={handleGalaxyExplorer}>
+            <div className="galaxy-card-header">
+              <div className="galaxy-card-icon">⚡</div>
+              <div className="galaxy-card-title">
+                <div className="galaxy-card-main">EXPLORAÇÃO</div>
+                <div className="galaxy-card-main">GALÁCTICA</div>
+              </div>
+              <div className="galaxy-card-badge">NOVO</div>
+            </div>
+            <div className="galaxy-card-content">
+              <div className="galaxy-item">
+                <span className="galaxy-item-name">Via Láctea</span>
+                <span className="galaxy-item-progress">Exploração 0%</span>
+              </div>
+              <div className="galaxy-item-list">
+                <div className="galaxy-item-sub">🌍 Sistema Solar</div>
+                <div className="galaxy-item-sub">🌎 Terra</div>
+              </div>
+            </div>
+          </div>
 
+          <div className="menu-buttons secondary-actions">
             <button 
               className="menu-btn secondary" 
               onClick={handleLeaderboard}
