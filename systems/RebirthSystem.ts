@@ -87,10 +87,14 @@ export class RebirthSystem {
   hotOilFragments: number = 0;
   rebirthCount: number = 0;
   galaxiesUnlocked: string[] = [];
+  ownedGalaxies: { [key: string]: boolean } = { via_lactea: true };
+  discoveredPlanets: Planet[] = [];
   currentGalaxy: string = 'via_lactea';
   planetsVisited: Planet[] = [];
   fragmentMultiplier: number = 1.0;
   cosmicResources: CosmicResource = {};
+  lastRebirthTime: number = 0;
+  totalPrestige: number = 0;
 
   galaxies: { [key: string]: Galaxy } = {
     via_lactea: {
