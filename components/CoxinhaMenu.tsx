@@ -433,6 +433,11 @@ interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
+  const [volume, setVolume] = React.useState(70);
+  const [musicEnabled, setMusicEnabled] = React.useState(true);
+  const [sfxEnabled, setSfxEnabled] = React.useState(true);
+  const [darkMode, setDarkMode] = React.useState(true);
+
   return (
     <div className="settings-modal-overlay" onClick={onClose} style={{
       position: 'fixed',
@@ -448,55 +453,234 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
       backdropFilter: 'blur(4px)'
     }}>
       <div className="settings-modal" onClick={(e) => e.stopPropagation()} style={{
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(139,92,246,0.05) 100%)',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255,200,100,0.2)',
+        background: 'linear-gradient(135deg, rgba(230,126,34,0.15) 0%, rgba(155,89,182,0.1) 100%)',
+        backdropFilter: 'blur(15px)',
+        border: '2px solid rgba(243,156,18,0.3)',
         borderRadius: '16px',
-        padding: '24px',
-        maxWidth: '400px',
+        padding: '32px',
+        maxWidth: '450px',
         width: '90%',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
+        boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
+        maxHeight: '85vh',
+        overflowY: 'auto'
       }}>
+        {/* Header */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '24px'
+          marginBottom: '32px'
         }}>
-          <h2 style={{ margin: 0, color: '#ffaa00', fontSize: '20px', fontWeight: '700' }}>
+          <h2 style={{ margin: 0, color: '#F39C12', fontSize: '22px', fontWeight: '700', letterSpacing: '1px' }}>
             ⚙️ CONFIGURAÇÕES
           </h2>
           <button onClick={onClose} style={{
             background: 'none',
             border: 'none',
-            color: '#fbbf24',
-            fontSize: '24px',
-            cursor: 'pointer'
-          }}>✕</button>
+            color: '#F39C12',
+            fontSize: '28px',
+            cursor: 'pointer',
+            transition: 'transform 0.2s ease',
+            padding: '4px'
+          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.2) rotate(90deg)'}
+             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) rotate(0deg)'}>✕</button>
         </div>
 
-        <div style={{ marginTop: '20px', textAlign: 'center' }}>
-          <p style={{ color: '#a0aec0', fontSize: '14px' }}>
-            As configurações avançadas estarão disponíveis em breve! 🎮
-          </p>
-          <button onClick={onClose} style={{
-            marginTop: '16px',
-            padding: '10px 24px',
-            background: 'linear-gradient(135deg, rgba(249,115,22,0.2), rgba(249,115,22,0.1))',
-            border: '2px solid rgba(249,115,22,0.4)',
-            borderRadius: '8px',
-            color: '#ffaa00',
-            cursor: 'pointer',
-            fontWeight: '700',
-            transition: 'all 0.3s ease'
-          }} onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(249,115,22,0.3), rgba(249,115,22,0.2))';
-          }} onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(249,115,22,0.2), rgba(249,115,22,0.1))';
+        {/* Settings Content */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          
+          {/* AUDIO Section */}
+          <div style={{
+            background: 'rgba(243, 156, 18, 0.08)',
+            border: '1px solid rgba(243, 156, 18, 0.2)',
+            borderRadius: '12px',
+            padding: '16px',
           }}>
-            ✓ FECHAR
-          </button>
+            <h3 style={{ margin: '0 0 16px 0', color: '#F39C12', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              🔊 ÁUDIO
+            </h3>
+
+            {/* Volume Slider */}
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'center' }}>
+                <label style={{ color: '#E0D5FF', fontSize: '13px', fontWeight: '600' }}>Volume</label>
+                <span style={{ color: '#F39C12', fontSize: '12px', fontWeight: '700' }}>{volume}%</span>
+              </div>
+              <input 
+                type="range" 
+                min="0" 
+                max="100" 
+                value={volume}
+                onChange={(e) => setVolume(parseInt(e.target.value))}
+                style={{
+                  width: '100%',
+                  height: '6px',
+                  borderRadius: '3px',
+                  background: 'linear-gradient(90deg, #E67E22 0%, #F39C12 ' + volume + '%, rgba(255, 255, 255, 0.1) ' + volume + '%, rgba(255, 255, 255, 0.1) 100%)',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  appearance: 'none',
+                  WebkitAppearance: 'none'
+                }}
+              />
+            </div>
+
+            {/* Music Toggle */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <label style={{ color: '#E0D5FF', fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                🎵 Música de Fundo
+              </label>
+              <button
+                onClick={() => setMusicEnabled(!musicEnabled)}
+                style={{
+                  background: musicEnabled ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(99, 102, 241, 0.2)',
+                  border: 'none',
+                  width: '44px',
+                  height: '24px',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  transition: 'all 0.3s ease',
+                  boxShadow: musicEnabled ? '0 0 12px rgba(16, 185, 129, 0.4)' : 'none'
+                }}
+              >
+                <div style={{
+                  position: 'absolute',
+                  width: '20px',
+                  height: '20px',
+                  background: 'white',
+                  borderRadius: '50%',
+                  top: '2px',
+                  left: musicEnabled ? '22px' : '2px',
+                  transition: 'left 0.3s ease',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }} />
+              </button>
+            </div>
+
+            {/* SFX Toggle */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ color: '#E0D5FF', fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                🔔 Efeitos Sonoros
+              </label>
+              <button
+                onClick={() => setSfxEnabled(!sfxEnabled)}
+                style={{
+                  background: sfxEnabled ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(99, 102, 241, 0.2)',
+                  border: 'none',
+                  width: '44px',
+                  height: '24px',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  transition: 'all 0.3s ease',
+                  boxShadow: sfxEnabled ? '0 0 12px rgba(16, 185, 129, 0.4)' : 'none'
+                }}
+              >
+                <div style={{
+                  position: 'absolute',
+                  width: '20px',
+                  height: '20px',
+                  background: 'white',
+                  borderRadius: '50%',
+                  top: '2px',
+                  left: sfxEnabled ? '22px' : '2px',
+                  transition: 'left 0.3s ease',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }} />
+              </button>
+            </div>
+          </div>
+
+          {/* DISPLAY Section */}
+          <div style={{
+            background: 'rgba(155, 89, 182, 0.08)',
+            border: '1px solid rgba(155, 89, 182, 0.2)',
+            borderRadius: '12px',
+            padding: '16px',
+          }}>
+            <h3 style={{ margin: '0 0 16px 0', color: '#B19CD9', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              🎨 DISPLAY
+            </h3>
+
+            {/* Dark Mode Toggle */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ color: '#E0D5FF', fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                🌙 Modo Escuro
+              </label>
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                style={{
+                  background: darkMode ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(99, 102, 241, 0.2)',
+                  border: 'none',
+                  width: '44px',
+                  height: '24px',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  transition: 'all 0.3s ease',
+                  boxShadow: darkMode ? '0 0 12px rgba(16, 185, 129, 0.4)' : 'none'
+                }}
+              >
+                <div style={{
+                  position: 'absolute',
+                  width: '20px',
+                  height: '20px',
+                  background: 'white',
+                  borderRadius: '50%',
+                  top: '2px',
+                  left: darkMode ? '22px' : '2px',
+                  transition: 'left 0.3s ease',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }} />
+              </button>
+            </div>
+          </div>
+
+          {/* Game Info */}
+          <div style={{
+            background: 'rgba(6, 182, 212, 0.08)',
+            border: '1px solid rgba(6, 182, 212, 0.2)',
+            borderRadius: '12px',
+            padding: '16px',
+            textAlign: 'center'
+          }}>
+            <p style={{ margin: '0 0 8px 0', color: '#06b6d4', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>
+              Coxinha Clicker
+            </p>
+            <p style={{ color: '#a0aec0', fontSize: '12px', margin: 0 }}>
+              v1.0.0 - Próxima atualização em breve! 🚀
+            </p>
+          </div>
         </div>
+
+        {/* Close Button */}
+        <button onClick={onClose} style={{
+          marginTop: '32px',
+          width: '100%',
+          padding: '12px 24px',
+          background: 'linear-gradient(135deg, #E67E22 0%, #D35400 100%)',
+          border: '2px solid #F39C12',
+          borderRadius: '10px',
+          color: 'white',
+          cursor: 'pointer',
+          fontWeight: '700',
+          fontSize: '14px',
+          textTransform: 'uppercase',
+          letterSpacing: '1px',
+          transition: 'all 0.3s ease',
+          boxShadow: '0 6px 20px rgba(230, 126, 34, 0.3)'
+        }} 
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 8px 28px rgba(230, 126, 34, 0.4)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 6px 20px rgba(230, 126, 34, 0.3)';
+        }}>
+          ✓ FECHAR CONFIGURAÇÕES
+        </button>
       </div>
     </div>
   );
