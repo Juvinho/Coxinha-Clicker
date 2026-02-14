@@ -29,54 +29,69 @@ const BigCoxinha: React.FC<BigCoxinhaProps> = ({ onClick, cursorCount = 0 }) => 
         }
       `}</style>
 
-      {/* Orbiting Cursors */}
+      {/* Orbiting Pointer Cursors */}
       {cursors.length > 0 && (
-        <div className="absolute inset-0 pointer-events-none animate-[spin_40s_linear_infinite] z-0">
-          {cursors.map((_, i) => (
-            <div
-              key={i}
-              className="cursor-orbiter absolute top-1/2 left-1/2 transition-transform duration-500"
-              style={{
-                transform: `rotate(${i * (360 / cursors.length)}deg) translateX(var(--orbit-radius)) rotate(-${i * (360 / cursors.length)}deg)`
-              }}
-            >
-              {/* Cookie Clicker Style Hand Cursor in Yellow */}
-              <svg 
-                viewBox="0 0 32 32" 
-                width="32" 
-                height="32" 
-                style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))' }}
+        <div
+          className="absolute pointer-events-none z-0"
+          style={{
+            top: '50%',
+            left: '50%',
+            width: 0,
+            height: 0,
+            animation: 'cursorOrbit 40s linear infinite',
+          }}
+        >
+          {cursors.map((_, i) => {
+            const angle = (i * 360) / cursors.length;
+            // Make pointer face inward toward the coxinha center
+            const pointerRotation = angle + 130;
+            return (
+              <div
+                key={i}
+                className="absolute"
+                style={{
+                  transform: `rotate(${angle}deg) translateY(calc(-1 * var(--orbit-radius))) rotate(-${angle}deg)`,
+                  transformOrigin: '0 0',
+                }}
               >
-                <g fill="#ffaa00" stroke="#d4a574" strokeWidth="0.5">
-                  {/* Wrist/Hand base */}
-                  <rect x="10" y="20" width="12" height="8" rx="2" />
-                  
-                  {/* Palm */}
-                  <circle cx="16" cy="14" r="7" />
-                  
-                  {/* Thumb */}
-                  <ellipse cx="11" cy="12" rx="2.5" ry="4" />
-                  
-                  {/* Index finger */}
-                  <ellipse cx="14" cy="6" rx="2.5" ry="5" />
-                  
-                  {/* Middle finger */}
-                  <ellipse cx="16" cy="4" rx="2.5" ry="6" />
-                  
-                  {/* Ring finger */}
-                  <ellipse cx="18" cy="6" rx="2.5" ry="5" />
-                  
-                  {/* Pinky finger */}
-                  <ellipse cx="21" cy="12" rx="2.5" ry="4" />
-                  
-                  {/* Shine/highlight on palm */}
-                  <circle cx="15" cy="12" r="2" fill="#ffff00" opacity="0.7" />
-                </g>
-              </svg>
-            </div>
-          ))}
+                {/* Pointer Cursor SVG */}
+                <svg
+                  viewBox="0 0 24 24"
+                  width="26"
+                  height="26"
+                  style={{
+                    transform: `translate(-50%, -50%) rotate(${pointerRotation}deg)`,
+                    filter: 'drop-shadow(0 0 6px rgba(255,170,0,0.7)) drop-shadow(0 2px 3px rgba(0,0,0,0.9))',
+                  }}
+                >
+                  <path
+                    d="M5 2 L5 18 L9.5 14 L14 22 L17 20.5 L12.5 12.5 L18 12 Z"
+                    fill="#ffaa00"
+                    stroke="#78350f"
+                    strokeWidth="1"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M7 5 L7 14 L10 11.5"
+                    fill="none"
+                    stroke="#ffd54f"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    opacity="0.5"
+                  />
+                </svg>
+              </div>
+            );
+          })}
         </div>
       )}
+
+      <style>{`
+        @keyframes cursorOrbit {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
 
       {/* Main Coxinha SVG - TEARDROP SHAPE */}
       <svg viewBox="0 0 200 280" className="w-full h-full z-10 relative overflow-visible">

@@ -8,6 +8,7 @@ interface MusicPlayerProps {
 const MusicPlayer: React.FC<MusicPlayerProps> = ({ enabled, volume = 0.3 }) => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const oscillatorsRef = useRef<OscillatorNode[]>([]);
+  const lfoOscillatorsRef = useRef<OscillatorNode[]>([]);
   const gainsRef = useRef<GainNode[]>([]);
   const masterGainRef = useRef<GainNode | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -52,6 +53,7 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ enabled, volume = 0.3 }) => {
         gain.connect(masterGainRef.current!);
         
         oscillatorsRef.current.push(osc);
+        lfoOscillatorsRef.current.push(lfo);
         gainsRef.current.push(gain);
         
         lfo.start();
@@ -66,13 +68,13 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ enabled, volume = 0.3 }) => {
     return () => {
       if (audioContextRef.current && oscillatorsRef.current.length > 0) {
         oscillatorsRef.current.forEach(osc => {
-          try {
-            osc.stop();
-          } catch (e) {
-            // Already stopped
-          }
+          try { osc.stop(); } catch (e) { /* Already stopped */ }
+        });
+        lfoOscillatorsRef.current.forEach(osc => {
+          try { osc.stop(); } catch (e) { /* Already stopped */ }
         });
         oscillatorsRef.current = [];
+        lfoOscillatorsRef.current = [];
         gainsRef.current = [];
       }
     };
@@ -88,13 +90,13 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ enabled, volume = 0.3 }) => {
         
         setTimeout(() => {
           oscillatorsRef.current.forEach(osc => {
-            try {
-              osc.stop();
-            } catch (e) {
-              // Already stopped
-            }
+            try { osc.stop(); } catch (e) { /* Already stopped */ }
+          });
+          lfoOscillatorsRef.current.forEach(osc => {
+            try { osc.stop(); } catch (e) { /* Already stopped */ }
           });
           oscillatorsRef.current = [];
+          lfoOscillatorsRef.current = [];
           gainsRef.current = [];
           setIsPlaying(false);
         }, 1000);

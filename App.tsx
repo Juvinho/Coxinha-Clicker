@@ -1,710 +1,786 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Building, GameState, Upgrade, FloatingText, Particle } from './types';
-import { INITIAL_BUILDINGS, INITIAL_UPGRADES } from './constants';
-import { calculateBuildingCost, formatNumber } from './utils';
+// ============================================================================
+// COXINHA CLICKER AAA - MAIN APPLICATION
+// Complete rewrite using GameEngine + Context architecture
+// ============================================================================
+
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { GameProvider, useGame } from './context/GameContext';
+import type { FloatingText, Particle, GameTab } from './types';
 import BigCoxinha from './components/BigCoxinha';
-import BuildingRow from './components/BuildingRow';
-import Upgrades from './components/Upgrades';
 import GoldenCoxinha from './components/GoldenCoxinha';
 import NewsTicker from './components/NewsTicker';
-import SystemsUI from './components/SystemsUI';
 import CoxinhaMenu from './components/CoxinhaMenu';
 import MusicPlayer from './components/MusicPlayer';
-import RebirthPanel from './components/RebirthPanel';
-import GalaxyExplorer from './components/GalaxyExplorer';
-import { ComboSystem } from './systems/ComboSystem';
-import { RandomEvents } from './systems/RandomEvents';
-import { DailyQuests } from './systems/DailyQuests';
-import { RebirthSystem } from './systems/RebirthSystem';
-import { Save, RotateCcw, Volume2, VolumeX, TrendingUp, Trophy, Zap, MousePointer2, Sparkles } from 'lucide-react';
+import {
+  AchievementPanel,
+  SkillTreePanel,
+  PetPanel,
+  CraftingPanel,
+  QuestPanel,
+  StatisticsPanel,
+  ChallengePanel,
+  RebirthPanelNew,
+  NotificationToast,
+  BuffBar,
+  ResourcesBar,
+} from './components/GamePanels';
+import {
+  WeatherDisplay,
+  RelicPanel,
+  ResearchPanel,
+  SpellPanel,
+  ExpeditionPanel,
+  BossPanel,
+  GardenPanel,
+  TradingPanel,
+  EnchantmentPanel,
+  ArtifactPanel,
+  MiniGamePanel,
+  AscensionPanel,
+} from './components/SystemPanels';
+import {
+  Save, RotateCcw, Volume2, VolumeX, TrendingUp, Trophy, Zap,
+  MousePointer2, Sparkles, ChevronLeft, ChevronRight,
+} from 'lucide-react';
 
-const SAVE_KEY = 'coxinha_clicker_ultimate_2026';
-const REBIRTH_SAVE_KEY = 'coxinha_rebirth_system_2026';
+// ── Tab Config ───────────────────────────────────────────────────────────────
 
-// --- Web Audio System ---
-const playSound = (type: 'click' | 'buy' | 'upgrade' | 'golden', enabled: boolean) => {
-  if (!enabled) return;
-  const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-  if (!AudioContext) return;
-  const ctx = new AudioContext();
-  const gain = ctx.createGain();
+const TABS: { id: GameTab; label: string; icon: string }[] = [
+  { id: 'buildings', label: 'Edifícios', icon: '🏗️' },
+  { id: 'upgrades', label: 'Upgrades', icon: '✨' },
+  { id: 'achievements', label: 'Conquistas', icon: '🏆' },
+  { id: 'skills', label: 'Skills', icon: '🌳' },
+  { id: 'pets', label: 'Pets', icon: '🐾' },
+  { id: 'crafting', label: 'Crafting', icon: '⚗️' },
+  { id: 'challenges', label: 'Desafios', icon: '⚔️' },
+  { id: 'statistics', label: 'Stats', icon: '📊' },
+  { id: 'relics', label: 'Relíquias', icon: '🏺' },
+  { id: 'research', label: 'Pesquisa', icon: '🔬' },
+  { id: 'spells', label: 'Magias', icon: '🪄' },
+  { id: 'expeditions', label: 'Expedições', icon: '🗺️' },
+  { id: 'bosses', label: 'Bosses', icon: '👹' },
+  { id: 'garden', label: 'Jardim', icon: '🌱' },
+  { id: 'trading', label: 'Comércio', icon: '🤝' },
+  { id: 'enchantments', label: 'Encantamentos', icon: '💎' },
+  { id: 'artifacts', label: 'Artefatos', icon: '⚱️' },
+  { id: 'minigames', label: 'Minigames', icon: '🎮' },
+  { id: 'automation', label: 'Automação', icon: '🤖' },
+];
 
-  if (type === 'click') {
-    // Wet crunch
-    const bufferSize = ctx.sampleRate * 0.1;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
-    
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(800, ctx.currentTime);
-    
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-    noise.start();
-  } 
-  else if (type === 'buy') {
-    // Coin Clink
-    const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(1200, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(2000, ctx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(); osc.stop(ctx.currentTime + 0.2);
-  }
-  else if (type === 'golden') {
-      // Angelic
-      const osc = ctx.createOscillator();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(440, ctx.currentTime);
-      osc.frequency.linearRampToValueAtTime(880, ctx.currentTime + 0.5);
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(); osc.stop(ctx.currentTime + 1);
-  }
+// ── Floating Text / Particle System (UI-only) ───────────────────────────────
+
+function useFloatingTexts() {
+  const [texts, setTexts] = useState<FloatingText[]>([]);
+
+  const addText = useCallback((x: number, y: number, text: string, color: string, isCrit = false) => {
+    const id = Date.now() + Math.random();
+    setTexts(prev => [...prev, { id, x, y, text, color, isCrit }]);
+    setTimeout(() => setTexts(prev => prev.filter(t => t.id !== id)), 1200);
+  }, []);
+
+  return { texts, addText };
+}
+
+function useParticles() {
+  const [particles, setParticles] = useState<Particle[]>([]);
+
+  const spawn = useCallback((x: number, y: number, color: string, count = 8) => {
+    const colors = [color, '#ffaa00', '#d4a574'];
+    const newP: Particle[] = [];
+    for (let i = 0; i < count; i++) {
+      newP.push({
+        id: Date.now() + i + Math.random(),
+        x, y,
+        vx: (Math.random() - 0.5) * 10,
+        vy: (Math.random() - 1) * 8 - 3,
+        size: Math.random() * 5 + 2,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        life: 1,
+        maxLife: 1,
+      });
+    }
+    setParticles(prev => [...prev, ...newP]);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setParticles(prev =>
+        prev.map(p => ({
+          ...p,
+          x: p.x + p.vx,
+          y: p.y + p.vy + 0.5,
+          life: p.life - 0.04,
+        })).filter(p => p.life > 0)
+      );
+    }, 16);
+    return () => clearInterval(interval);
+  }, []);
+
+  return { particles, spawn };
+}
+
+// ── Building List Component ──────────────────────────────────────────────────
+
+const BUY_AMOUNTS = [1, 10, 100, -1] as const; // -1 = max
+
+const BuildingList: React.FC = () => {
+  const { state, buyBuilding, buyBuildingBulk, getBuildingCost, getBulkBuildingCost, getMaxAffordableBuildings, formatNumber, cps } = useGame();
+  const [buyAmount, setBuyAmount] = useState<number>(1);
+
+  return (
+    <div className="space-y-2">
+      {/* Buy amount selector */}
+      <div className="flex items-center justify-between bg-[#1a0f08] rounded-lg px-3 py-1.5 border border-[#3d2211]">
+        <span className="text-[10px] text-gray-400">Comprar:</span>
+        <div className="flex gap-1">
+          {BUY_AMOUNTS.map(amt => (
+            <button key={amt} onClick={() => setBuyAmount(amt)}
+              className={`text-[9px] px-2 py-0.5 rounded font-bold transition-all ${
+                buyAmount === amt ? 'bg-[#ffaa00] text-black' : 'bg-white/5 text-gray-400 hover:bg-white/10'
+              }`}>
+              {amt === -1 ? 'MAX' : `x${amt}`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {state.buildings.map(b => {
+        const cost1 = getBuildingCost(b);
+        const effectiveAmount = buyAmount === -1 ? getMaxAffordableBuildings(b) : buyAmount;
+        const totalCost = buyAmount === -1 ? getBulkBuildingCost(b, effectiveAmount) : getBulkBuildingCost(b, buyAmount);
+        const canAfford = effectiveAmount > 0 && state.resources.coxinhas >= totalCost;
+        // Only show buildings the player can nearly afford or already has
+        if (b.count === 0 && cost1 > state.resources.coxinhas * 1000 && cps < b.baseCps * 0.1) return null;
+
+        const handleBuy = () => {
+          if (!canAfford) return;
+          if (buyAmount === 1) {
+            buyBuilding(b.id);
+          } else {
+            buyBuildingBulk(b.id, effectiveAmount);
+          }
+        };
+
+        return (
+          <div
+            key={b.id}
+            className={`relative flex flex-col p-3 rounded-lg border-l-2 transition-all duration-200 group select-none
+              ${canAfford
+                ? 'bg-[#1a0f08] border-[#ffaa00] hover:bg-[#25160b] hover:translate-x-1 cursor-pointer'
+                : 'bg-[#0f0705] border-[#3d2211] opacity-60 cursor-not-allowed'}`}
+            style={{ boxShadow: canAfford ? 'inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 10px rgba(0,0,0,0.5)' : 'none' }}
+            onClick={handleBuy}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-3">
+                <div className="text-3xl filter drop-shadow-md">{b.icon}</div>
+                <div>
+                  <div className="font-bold text-sm text-[#e5e5e5]">{b.name}</div>
+                  <div className="text-[10px] text-gray-400 font-mono">{b.count} possuídos</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className={`font-bold text-sm ${canAfford ? 'text-[#ffaa00]' : 'text-red-900'}`}>
+                  {formatNumber(totalCost)}
+                </div>
+                {effectiveAmount > 1 && (
+                  <div className="text-[8px] text-gray-500">x{effectiveAmount}</div>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-between items-center border-t border-white/5 pt-1 mt-1">
+              <div className="text-[10px] text-gray-500">
+                Cada: <span className="text-gray-300">+{formatNumber(b.baseCps)} Cx/s</span>
+              </div>
+              {canAfford && <div className="text-[9px] text-[#ffaa00] animate-pulse font-bold tracking-wider">
+                {buyAmount === -1 ? `COMPRAR MAX (${effectiveAmount})` : buyAmount > 1 ? `COMPRAR ${buyAmount}` : 'COMPRAR'}
+              </div>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 };
 
-const App: React.FC = () => {
-  // Game State
-  const [gameStarted, setGameStarted] = useState<boolean>(false);
-  const [musicEnabled, setMusicEnabled] = useState<boolean>(true);
-  
-  const [coxinhas, setCoxinhas] = useState<number>(0);
-  const [lifetimeCoxinhas, setLifetimeCoxinhas] = useState<number>(0);
-  const [buildings, setBuildings] = useState<Building[]>(INITIAL_BUILDINGS);
-  const [upgrades, setUpgrades] = useState<Upgrade[]>(INITIAL_UPGRADES);
-  
-  // Rebirth System State
-  const [rebirthSystem] = useState<RebirthSystem>(new RebirthSystem());
-  const [hotOilFragments, setHotOilFragments] = useState<number>(0);
-  const [rebirthCount, setRebirthCount] = useState<number>(0);
-  const [showGalaxyExplorer, setShowGalaxyExplorer] = useState<boolean>(false);
-  const [currentGalaxy, setCurrentGalaxy] = useState<string>('via_lactea');
-  
-  // Computed values
-  const [cps, setCps] = useState<number>(0);
-  const [clickPower, setClickPower] = useState<number>(1);
-  const [globalMultiplier, setGlobalMultiplier] = useState<number>(1); // From Frenzy or Global upgrades
-  const [goldenSpawnRate, setGoldenSpawnRate] = useState<number>(1);
-  
-  const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
-  const [particles, setParticles] = useState<Particle[]>([]);
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
-  
-  // Golden Coxinha State
-  const [frenzyActive, setFrenzyActive] = useState(false);
-  const frenzyTimerRef = useRef<number | null>(null);
-  const frenzyMultiplierRef = useRef<number>(1); // To separate from permanent global multiplier
+// ── Upgrade Grid Component ───────────────────────────────────────────────────
 
-  // Game Systems
-  const comboSystemRef = useRef(new ComboSystem());
-  const randomEventsRef = useRef(new RandomEvents());
-  const dailyQuestsRef = useRef(new DailyQuests());
-  
-  // System UI States
-  const [comboCount, setComboCount] = useState<number>(0);
-  const [activeEvent, setActiveEvent] = useState<{name: string; icon: string; color: string} | null>(null);
-  const [questProgress, setQuestProgress] = useState<number>(0);
-  const [questsCompleted, setQuestsCompleted] = useState<number>(0);
-  const [eventNotifications, setEventNotifications] = useState<{id: number; message: string; icon: string; color: string; duration: number}[]>([]);
+const UPGRADE_FILTERS = [
+  { id: 'all', label: 'Todos', icon: '🔮' },
+  { id: 'building', label: 'Edifícios', icon: '🏗️' },
+  { id: 'click', label: 'Clique', icon: '🖱️' },
+  { id: 'global', label: 'Global', icon: '🌍' },
+  { id: 'golden', label: 'Dourado', icon: '⭐' },
+  { id: 'synergy', label: 'Sinergia', icon: '🔗' },
+  { id: 'prestige', label: 'Prestígio', icon: '🔥' },
+] as const;
 
-  // --- Helper Functions (DEFINE EARLY) ---
-  const addFloatingText = (x: number, y: number, text: string, color: string, isBig: boolean) => {
-    const id = Date.now() + Math.random();
-    setFloatingTexts(p => [...p, { id, x, y, text, color, isBig }]);
-    setTimeout(() => setFloatingTexts(p => p.filter(t => t.id !== id)), 1200);
-  };
+const UpgradeGrid: React.FC = () => {
+  const { state, buyUpgrade, isUpgradeVisible, formatNumber } = useGame();
+  const [filter, setFilter] = useState('all');
+  const [showPurchased, setShowPurchased] = useState(false);
 
-  // --- Logic ---
-  const saveGame = useCallback(() => {
-    const gameState: GameState = { coxinhas, totalCoxinhas: lifetimeCoxinhas, startTime: Date.now(), buildings, upgrades, prestigeLevel: 0 };
-    localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
-    
-    // Save rebirth system
-    if (rebirthSystem) {
-      const rebirthData = rebirthSystem.save();
-      localStorage.setItem(REBIRTH_SAVE_KEY, JSON.stringify(rebirthData));
-    }
-  }, [coxinhas, lifetimeCoxinhas, buildings, upgrades, rebirthSystem]);
+  const visibleUpgrades = useMemo(
+    () => state.upgrades.filter(u => !u.purchased && isUpgradeVisible(u)),
+    [state.upgrades, isUpgradeVisible]
+  );
 
-  useEffect(() => {
-    const saved = localStorage.getItem(SAVE_KEY);
-    if (saved) {
-      try {
-        const parsed: GameState = JSON.parse(saved);
-        setCoxinhas(parsed.coxinhas);
-        setLifetimeCoxinhas(parsed.totalCoxinhas || parsed.coxinhas);
-        const mergedBuildings = INITIAL_BUILDINGS.map(iB => { const sB = parsed.buildings.find(b => b.id === iB.id); return sB ? { ...iB, count: sB.count } : iB; });
-        setBuildings(mergedBuildings);
-        const mergedUpgrades = INITIAL_UPGRADES.map(iU => { const sU = parsed.upgrades.find(u => u.id === iU.id); return sU ? { ...iU, purchased: sU.purchased } : iU; });
-        setUpgrades(mergedUpgrades);
-      } catch (e) { console.error("Corrupted save", e); }
-    }
+  const purchasedUpgrades = useMemo(
+    () => state.upgrades.filter(u => u.purchased),
+    [state.upgrades]
+  );
 
-    // Load rebirth system
-    const rebirthSaved = localStorage.getItem(REBIRTH_SAVE_KEY);
-    if (rebirthSaved && rebirthSystem) {
-      try {
-        const rebirthData = JSON.parse(rebirthSaved);
-        rebirthSystem.load(rebirthData);
-        setHotOilFragments(rebirthSystem.hotOilFragments);
-        setRebirthCount(rebirthSystem.rebirthCount);
-        setCurrentGalaxy(rebirthSystem.currentGalaxy || 'via_lactea');
-      } catch (e) { console.error("Corrupted rebirth save", e); }
-    }
+  const filtered = useMemo(() => {
+    if (filter === 'all') return visibleUpgrades;
+    return visibleUpgrades.filter(u => u.type === filter);
+  }, [visibleUpgrades, filter]);
 
-    // Initialize Game Systems with Callbacks (safely)
-    if (comboSystemRef.current) {
-      comboSystemRef.current.callbacks.onCombo = (count) => {
-        addFloatingText(window.innerWidth/2, window.innerHeight/4, `${count} COMBO! 🔥`, '#ffaa00', true);
-        setComboCount(count);
-      };
-      
-      comboSystemRef.current.callbacks.onBreak = () => {
-        setComboCount(0);
-      };
-    }
+  const purchasedFiltered = useMemo(() => {
+    if (filter === 'all') return purchasedUpgrades;
+    return purchasedUpgrades.filter(u => u.type === filter);
+  }, [purchasedUpgrades, filter]);
 
-    if (randomEventsRef.current && randomEventsRef.current.callbacks) {
-      randomEventsRef.current.callbacks.onEventTriggered = (event: any) => {
-        const eventMap: {[key: string]: {name: string; icon: string; color: string}} = {
-          'chuva_coxinhas': {name: 'Chuva de Coxinhas! ☔', icon: '🌧️', color: '#2196F3'},
-          'vovo_inspirada': {name: 'Vovó Inspirada! 👵', icon: '👵', color: '#FF69B4'},
-          'apagao': {name: 'Apagão! ⚫', icon: '⚫', color: '#222'},
-          'rush_hour': {name: 'Hora do Rush! 🚀', icon: '🚀', color: '#FF6B00'},
-          'fiscal': {name: 'Fiscal da Prefeitura! 👮', icon: '👮', color: '#FF0000'},
-          'cliente_vip': {name: 'Cliente VIP! 💎', icon: '💎', color: '#FFD700'},
-        };
-        
-        const info = eventMap[event.id] || {name: event.name, icon: '✨', color: '#FFD700'};
-        setActiveEvent(info);
-        setEventNotifications(prev => [...prev, {
-          id: Date.now(),
-          message: event.message,
-          icon: info.icon,
-          color: info.color,
-          duration: 3000
-        }]);
-        
-        setTimeout(() => setActiveEvent(null), 2000);
-      };
-    }
+  return (
+    <div className="space-y-2">
+      {/* Stats bar */}
+      <div className="flex items-center justify-between bg-[#1a0f08] rounded-lg px-3 py-1.5 border border-[#3d2211]">
+        <span className="text-[10px] text-gray-400">
+          ✨ <span className="text-[#ffaa00] font-bold">{purchasedUpgrades.length}</span> comprados · <span className="text-green-400 font-bold">{visibleUpgrades.length}</span> disponíveis
+        </span>
+        <button onClick={() => setShowPurchased(!showPurchased)}
+          className={`text-[9px] px-2 py-0.5 rounded ${showPurchased ? 'bg-[#ffaa00]/20 text-[#ffaa00]' : 'bg-white/5 text-gray-500 hover:text-gray-300'}`}>
+          {showPurchased ? '📖 Esconder' : '📖 Ver comprados'}
+        </button>
+      </div>
 
-    if (dailyQuestsRef.current) {
-      dailyQuestsRef.current.checkReset();
-      setQuestsCompleted(dailyQuestsRef.current.getCompletedCount());
-    }
-  }, []);
+      {/* Filter tabs */}
+      <div className="flex flex-wrap gap-1">
+        {UPGRADE_FILTERS.map(f => {
+          const count = f.id === 'all' ? (showPurchased ? purchasedUpgrades.length : visibleUpgrades.length) : (showPurchased ? purchasedUpgrades : visibleUpgrades).filter(u => u.type === f.id).length;
+          if (count === 0 && f.id !== 'all') return null;
+          return (
+            <button key={f.id} onClick={() => setFilter(f.id)}
+              className={`text-[9px] px-2 py-1 rounded-full transition-all ${filter === f.id ? 'bg-[#ffaa00] text-black font-bold' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+              {f.icon} {f.label} <span className="opacity-60">({count})</span>
+            </button>
+          );
+        })}
+      </div>
 
-  useEffect(() => { const i = setInterval(saveGame, 30000); return () => clearInterval(i); }, [saveGame]);
+      {/* Purchased upgrades view */}
+      {showPurchased ? (
+        purchasedFiltered.length === 0 ? (
+          <div className="text-center text-gray-500 text-sm py-4 italic">Nenhum upgrade comprado{filter !== 'all' ? ' nesta categoria' : ''}</div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pb-4">
+            {purchasedFiltered.map(u => (
+              <div key={u.id} className="relative flex flex-col justify-between p-2 rounded border-b-2 h-[90px] bg-green-900/20 border-green-700/50">
+                <div className="flex justify-between items-start mb-1">
+                  <div className="bg-black/30 w-6 h-6 flex items-center justify-center rounded text-xs border border-green-500/20">
+                    {u.icon || '✅'}
+                  </div>
+                  <div className="text-[9px] font-bold px-1 py-0.5 rounded bg-green-500/10 text-green-400">✓ Ativo</div>
+                </div>
+                <div>
+                  <div className="font-bold text-green-200 text-[10px] leading-tight mb-0.5">{u.name}</div>
+                  <div className="text-[8px] text-gray-500 leading-tight line-clamp-2">{u.description}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : filtered.length === 0 ? (
+        <div className="w-full flex flex-col items-center justify-center text-[#5c3a21] italic py-8">
+          <span className="text-2xl mb-1 opacity-50">🔒</span>
+          {filter === 'all' ? 'Nenhum upgrade disponível no momento' : 'Nenhum upgrade nesta categoria'}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pb-4">
+          {filtered.map(u => {
+            const canBuy = u.type === 'prestige'
+              ? state.resources.hotOilFragments >= u.cost
+              : state.resources.coxinhas >= u.cost;
 
-  // System Updates Loop
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Update RandomEvents
-      randomEventsRef.current?.update?.(0.016, { coxinhas, cps });
-      
-      // Update Daily Quests
-      dailyQuestsRef.current?.checkReset?.();
-      const questsCount = dailyQuestsRef.current?.getCompletedCount?.() || 0;
-      setQuestsCompleted(questsCount);
-      
-      // Update quest progress
-      const currentQuest = dailyQuestsRef.current?.quests?.[0];
-      if (currentQuest) {
-        const progress = (currentQuest.progress / currentQuest.goal) * 100;
-        setQuestProgress(Math.min(progress, 100));
-      }
-    }, 100);
-    
-    return () => clearInterval(interval);
-  }, [coxinhas, cps]);
+            return (
+              <div
+                key={u.id}
+                className={`relative flex flex-col justify-between p-2 rounded border-b-2 transition-all duration-150 group overflow-hidden h-[90px]
+                  ${canBuy
+                    ? 'bg-[#2a1810] border-[#ffaa00] hover:-translate-y-1 hover:bg-[#3d2211] cursor-pointer shadow-lg'
+                    : 'bg-[#120a06] border-[#3d2211] opacity-60 cursor-not-allowed'}`}
+                onClick={() => canBuy && buyUpgrade(u.id)}
+              >
+                <div className="flex justify-between items-start mb-1">
+                  <div className="bg-black/30 w-6 h-6 flex items-center justify-center rounded text-xs border border-white/5">
+                    {u.icon || '✨'}
+                  </div>
+                  <div className={`text-[9px] font-bold px-1 py-0.5 rounded ${canBuy ? 'bg-[#ffaa00]/10 text-[#ffaa00]' : 'text-red-700'}`}>
+                    {u.type === 'prestige' ? '🔥' : ''}{formatNumber(u.cost)}
+                  </div>
+                </div>
+                <div>
+                  <div className="font-bold text-[#e5e5e5] text-[10px] leading-tight mb-0.5">{u.name}</div>
+                  <div className="text-[8px] text-gray-500 leading-tight line-clamp-2">{u.description}</div>
+                </div>
+                {!canBuy && <div className="absolute top-1 left-1/2 -translate-x-1/2 text-[7px] text-red-500/70 font-bold">💰 CARO</div>}
+                {canBuy && <div className="absolute inset-0 bg-white/5 translate-y-full group-hover:translate-y-0 transition-transform duration-200 pointer-events-none" />}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
 
-  // Event Notifications Cleanup
-  useEffect(() => {
-    const timers = eventNotifications.map(event =>
-      setTimeout(() => {
-        setEventNotifications(prev => prev.filter(e => e.id !== event.id));
-      }, 3000)
-    );
-    
-    return () => timers.forEach(t => clearTimeout(t));
-  }, [eventNotifications]);
+// ── Auto-Buyer Panel ─────────────────────────────────────────────────────────
 
-  // --- Recalculate Game Stats (CPS, Click, Multipliers) ---
-  useEffect(() => {
-    let newCps = 0;
-    let newClickPowerMultiplier = 1;
-    let newGlobalMultiplier = 1;
-    let newGoldenRate = 1;
+const AutoBuyerPanel: React.FC = () => {
+  const { state, toggleAutoBuyer, toggleAllAutoBuyers, formatNumber, getBuildingCost } = useGame();
 
-    // 1. Calculate Base CPS from Buildings + Building Upgrades
-    buildings.forEach(b => {
-      let bCps = b.baseCps * b.count;
-      // Apply building-specific upgrades
-      upgrades.filter(u => u.purchased && u.type === 'building' && u.triggerBuildingId === b.id).forEach(u => {
-         bCps *= u.multiplier;
-      });
-      newCps += bCps;
-    });
+  const anyEnabled = state.autoBuyers.some(ab => ab.enabled);
+  const enabledCount = state.autoBuyers.filter(ab => ab.enabled).length;
 
-    // 2. Process other upgrade types
-    upgrades.filter(u => u.purchased).forEach(u => {
-        if (u.type === 'global') {
-            newGlobalMultiplier *= u.multiplier;
-        } else if (u.type === 'click') {
-            newClickPowerMultiplier *= u.multiplier;
-        } else if (u.type === 'golden') {
-            newGoldenRate *= u.multiplier;
-        }
-    });
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-cyan-400">🤖 Automação</h2>
+        <button onClick={() => toggleAllAutoBuyers(!anyEnabled)}
+          className={`text-xs px-3 py-1 rounded font-bold ${anyEnabled ? 'bg-red-600 hover:bg-red-500' : 'bg-green-600 hover:bg-green-500'}`}>
+          {anyEnabled ? '⏹ Desligar Todos' : '▶️ Ligar Todos'}
+        </button>
+      </div>
+      <div className="text-sm text-gray-400 bg-gray-800/30 rounded-lg p-2">
+        <p>Compra automática de edifícios a cada <span className="text-cyan-400 font-bold">10 segundos</span>.</p>
+        <p className="text-xs mt-1 text-gray-500">{enabledCount} auto-buyers ativos</p>
+      </div>
+      <div className="grid grid-cols-1 gap-2">
+        {state.buildings.map(b => {
+          const ab = state.autoBuyers.find(a => a.buildingId === b.id);
+          if (!ab) return null;
+          const cost = getBuildingCost(b);
+          return (
+            <div key={b.id} className={`flex items-center gap-3 p-2 rounded-lg border transition-all ${ab.enabled ? 'bg-cyan-900/20 border-cyan-700' : 'bg-gray-800/50 border-gray-700'}`}>
+              <span className="text-xl">{b.icon}</span>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-sm text-[#e5e5e5]">{b.name}</div>
+                <div className="text-[10px] text-gray-400">
+                  {b.count} uni · Custo: {formatNumber(cost)} · Auto: {ab.totalBought} comprados
+                </div>
+              </div>
+              <button onClick={() => toggleAutoBuyer(b.id)}
+                className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${ab.enabled ? 'bg-cyan-600 hover:bg-cyan-500 text-white' : 'bg-gray-600 hover:bg-gray-500 text-gray-300'}`}>
+                {ab.enabled ? '✅ ON' : '❌ OFF'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
-    // 3. Apply Global Multipliers (Permanent + Temporary Frenzy)
-    const totalMultiplier = newGlobalMultiplier * frenzyMultiplierRef.current;
-    newCps *= totalMultiplier;
-    
-    // 4. Calculate Click Power
-    // Base click = 1 + X% of CPS
-    let computedClick = (1 + (newCps * 0.05)) * newClickPowerMultiplier;
-    // Apply frenzy to click as well
-    computedClick *= frenzyMultiplierRef.current;
+// ── Combo Display ────────────────────────────────────────────────────────────
 
-    setCps(newCps);
-    setClickPower(computedClick);
-    setGlobalMultiplier(totalMultiplier);
-    setGoldenSpawnRate(newGoldenRate);
+const ComboDisplay: React.FC = () => {
+  const { comboState } = useGame();
 
-  }, [buildings, upgrades, frenzyActive]); // Recalc when these change
+  if (comboState.count < 5) return null;
 
-  // Main Loop - Fixed interval for reliable production counting
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCoxinhas(prev => {
-        const deltaSeconds = 0.1; // 100ms = 0.1 seconds
-        const earned = cps * deltaSeconds;
-        const newTotal = prev + earned;
-        setLifetimeCoxinhas(prevLife => prevLife + earned);
-        return newTotal;
-      });
-    }, 100); // Update every 100ms for smooth, reliable production
-    
-    return () => clearInterval(interval);
-  }, [cps]);
+  return (
+    <div className="absolute top-12 left-1/2 transform -translate-x-1/2 pointer-events-none z-40">
+      <div
+        className="text-4xl font-black drop-shadow-lg animate-bounce"
+        style={{
+          color: '#ffaa00',
+          textShadow: '0 0 20px #ffaa00, 0 0 40px rgba(255,170,0,0.5)',
+        }}
+      >
+        {comboState.count} COMBO! 🔥
+      </div>
+      {comboState.multiplier > 1 && (
+        <div className="text-center text-sm font-bold mt-1" style={{ color: '#ffaa00' }}>
+          x{comboState.multiplier.toFixed(1)}
+        </div>
+      )}
+    </div>
+  );
+};
 
-  const spawnParticles = (x: number, y: number, type: 'oil' | 'flour' | 'golden', count = 8) => {
-    const newParticles: Particle[] = [];
-    const colors = type === 'oil' ? ['#ffaa00', '#d4a574'] : type === 'flour' ? ['#ffffff', '#f0f0f0'] : ['#ff0000', '#00ff00', '#0000ff', '#ffff00'];
-    
-    for(let i=0; i<count; i++) {
-        newParticles.push({
-            id: Date.now() + i + Math.random(),
-            x, y,
-            size: Math.random() * 6 + 2,
-            rotation: Math.random() * 360,
-            speedX: (Math.random() - 0.5) * 10,
-            speedY: (Math.random() - 1) * 10 - 2,
-            opacity: 1,
-            color: colors[Math.floor(Math.random() * colors.length)]
-        });
-    }
-    setParticles(prev => [...prev, ...newParticles]);
-  };
+// ── Active Event Banner ──────────────────────────────────────────────────────
 
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Haptics
+const EventBanner: React.FC = () => {
+  const { activeEvent } = useGame();
+  if (!activeEvent) return null;
+
+  return (
+    <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+      <div className="flex items-center gap-2 bg-black/70 px-4 py-2 rounded-full border animate-pulse"
+        style={{ borderColor: activeEvent.color }}>
+        <span className="text-lg">{activeEvent.icon}</span>
+        <span className="text-sm font-bold" style={{ color: activeEvent.color }}>{activeEvent.name}</span>
+      </div>
+    </div>
+  );
+};
+
+// ── XP Bar ───────────────────────────────────────────────────────────────────
+
+const XpBar: React.FC = () => {
+  const { state } = useGame();
+  const pct = (state.player.xp / state.player.xpToNext) * 100;
+
+  return (
+    <div className="flex items-center gap-2 w-full">
+      <span className="text-[10px] text-[#4CAF50] font-bold whitespace-nowrap">Nv.{state.player.level}</span>
+      <div className="flex-1 h-1.5 bg-[#1a1a1a] rounded overflow-hidden">
+        <div className="h-full bg-gradient-to-r from-[#4CAF50] to-[#8BC34A] transition-all duration-300" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-[8px] text-gray-500 whitespace-nowrap">{Math.floor(state.player.xp)}/{state.player.xpToNext}</span>
+    </div>
+  );
+};
+
+// ── Main Game Interface ──────────────────────────────────────────────────────
+
+const GameApp: React.FC = () => {
+  const {
+    state, engine, cps, clickPower, globalMultiplier, goldenSpawnRate,
+    click, clickGolden, performRebirth, calculateRebirthFragments,
+    resetAll, updateSettings, formatNumber, formatTime, buyGalaxy, exploreGalaxy, travelToGalaxy,
+  } = useGame();
+
+  const [gameStarted, setGameStarted] = useState(false);
+  const [activeTab, setActiveTab] = useState<GameTab>('buildings');
+  const [leftPanelOpen, setLeftPanelOpen] = useState(true);
+
+  const { texts, addText } = useFloatingTexts();
+  const { particles, spawn } = useParticles();
+
+  // Check frenzy from active buffs
+  const hasFrenzy = state.activeBuffs.some(b => b.id === 'golden_frenzy');
+
+  // ── Click Handler ────────────────────────────────────────────────────────
+
+  const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (navigator.vibrate) navigator.vibrate(10);
-    playSound('click', soundEnabled);
-    
-    // Combo System
-    const comboMultiplier = comboSystemRef.current?.onClick?.() || 1;
-    setComboCount(comboSystemRef.current?.comboCount || 0);
-    
-    // Quest tracking
-    dailyQuestsRef.current?.checkProgress?.('clicks', 1);
-    
-    const isCrit = Math.random() < 0.02; // 2% crit
-    let damage = clickPower * comboMultiplier; // Apply combo multiplier
-    if (isCrit) damage *= 7;
 
-    setCoxinhas(p => p + damage);
-    setLifetimeCoxinhas(p => p + damage);
-
+    const result = click(e.clientX, e.clientY);
     const rX = (Math.random() - 0.5) * 60;
     const rY = (Math.random() - 0.5) * 60;
-    addFloatingText(e.clientX + rX, e.clientY - 60 + rY, `+${formatNumber(damage)}`, isCrit ? '#ffaa00' : '#fff', isCrit);
-    
-    spawnParticles(e.clientX, e.clientY, 'oil', 6);
-    if(isCrit) spawnParticles(e.clientX, e.clientY, 'flour', 5);
-  };
 
-  const handleGoldenCoxinha = () => {
-      playSound('golden', soundEnabled);
-      if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-      
-      // Quest tracking
-      dailyQuestsRef.current?.checkProgress?.('golden_clicked', 1);
-      
-      const type = Math.random() > 0.5 ? 'frenzy' : 'lucky';
-      
-      if (type === 'frenzy') {
-          // 7x production for 77 seconds
-          frenzyMultiplierRef.current = 7;
-          setFrenzyActive(true);
-          addFloatingText(window.innerWidth/2, window.innerHeight/3, `FRENESI! x7 (77s)`, '#ffaa00', true);
-          if (frenzyTimerRef.current) clearTimeout(frenzyTimerRef.current);
-          frenzyTimerRef.current = setTimeout(() => {
-              frenzyMultiplierRef.current = 1;
-              setFrenzyActive(false);
-          }, 77000);
-      } else {
-          // Lucky: 10% of bank or 15 mins of CpS
-          const gain = Math.min(coxinhas * 0.10, cps * 900) + 777;
-          setCoxinhas(p => p + gain);
-          setLifetimeCoxinhas(p => p + gain);
-          
-          // Quest tracking
-          dailyQuestsRef.current?.checkProgress?.('produced', gain);
-          
-          addFloatingText(window.innerWidth/2, window.innerHeight/3, `SORTE! +${formatNumber(gain)}`, '#39ff14', true);
-      }
-      
-      spawnParticles(window.innerWidth/2, window.innerHeight/2, 'golden', 30);
-  };
+    addText(
+      e.clientX + rX,
+      e.clientY - 60 + rY,
+      `+${formatNumber(result.damage)}`,
+      result.isCrit ? '#ffaa00' : '#fff',
+      result.isCrit
+    );
 
-  useEffect(() => {
-    const i = setInterval(() => {
-        setParticles(p => p.map(pt => ({
-            ...pt, x: pt.x + pt.speedX * 0.95, y: pt.y + pt.speedY + 0.8, opacity: pt.opacity - 0.04
-        })).filter(pt => pt.opacity > 0));
-    }, 16);
-    return () => clearInterval(i);
-  }, []);
+    spawn(e.clientX, e.clientY, '#ffaa00', result.isCrit ? 12 : 6);
+  }, [click, addText, spawn, formatNumber]);
 
-  const buy = (cost: number, action: () => void, type: 'building'|'upgrade') => {
-    if (coxinhas >= cost) {
-      if (navigator.vibrate) navigator.vibrate(5);
-      playSound(type === 'building' ? 'buy' : 'upgrade', soundEnabled);
-      setCoxinhas(c => c - cost);
-      action();
-      
-      if(type === 'building') {
-        spawnParticles(window.innerWidth * 0.8, window.innerHeight * 0.5, 'flour', 5);
-        dailyQuestsRef.current?.checkProgress?.('buildings_bought', 1);
-      }
+  // ── Golden Click Handler ─────────────────────────────────────────────────
+
+  const handleGolden = useCallback(() => {
+    if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+    const result = clickGolden();
+
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 3;
+
+    switch (result.type) {
+      case 'frenzy':
+        addText(cx, cy, `FRENESI! x${result.value} 🔥`, '#ffaa00', true);
+        break;
+      case 'lucky':
+        addText(cx, cy, `SORTE! +${formatNumber(result.value)} 🥟`, '#39ff14', true);
+        break;
+      case 'stardust':
+        addText(cx, cy, `+${result.value} POEIRA ESTELAR ✨`, '#9C27B0', true);
+        break;
+      case 'essence':
+        addText(cx, cy, `+${result.value} ESSÊNCIA DOURADA ⭐`, '#FFD700', true);
+        break;
     }
-  };
 
-  const reset = () => { 
-      if(confirm('Reiniciar o universo gastronômico?')) { 
-          setCoxinhas(0); setLifetimeCoxinhas(0); setBuildings(INITIAL_BUILDINGS); setUpgrades(INITIAL_UPGRADES); setCps(0); 
-          frenzyMultiplierRef.current = 1;
-          localStorage.removeItem(SAVE_KEY); 
-      } 
-  };
+    spawn(cx, window.innerHeight / 2, '#FFD700', 25);
+  }, [clickGolden, addText, spawn, formatNumber]);
 
-  const handleRebirth = () => {
-    const stats = {
-      total_coxinhas: lifetimeCoxinhas,
-      rebirths: rebirthCount,
-      galaxies_owned: Object.keys(rebirthSystem.ownedGalaxies).length,
-      planets_discovered: rebirthSystem.discoveredPlanets.length,
-      time_played: Math.floor((Date.now() - (rebirthSystem.lastRebirthTime || Date.now())) / 1000),
-      portals_entered: rebirthCount,
-      ascensions_completed: rebirthCount,
-      cities_owned: buildings.reduce((a, b) => a + b.count, 0),
-      click_count: 0,
-      buildings_purchased: buildings.reduce((a, b) => a + b.count, 0)
-    };
+  // ── Save Handler ─────────────────────────────────────────────────────────
 
-    const fragmensGained = rebirthSystem.calculateRebirthGain(lifetimeCoxinhas, rebirthCount);
-    
-    // Reset game state on rebirth
-    setCoxinhas(0);
-    setLifetimeCoxinhas(0);
-    setBuildings(INITIAL_BUILDINGS);
-    setUpgrades(INITIAL_UPGRADES);
-    setCps(0);
-    frenzyMultiplierRef.current = 1;
-    
-    // Update rebirth system
-    rebirthSystem.hotOilFragments += fragmensGained;
-    rebirthSystem.rebirthCount += 1;
-    rebirthSystem.totalPrestige += fragmensGained;
-    rebirthSystem.lastRebirthTime = Date.now();
-    
-    // Save rebirth state
-    setHotOilFragments(rebirthSystem.hotOilFragments);
-    setRebirthCount(rebirthSystem.rebirthCount);
-    
-    addFloatingText(window.innerWidth/2, window.innerHeight/2, `Renascimento! +${Math.floor(fragmensGained)} Fragmentos!`, '#9333ea', true);
-    spawnParticles(window.innerWidth/2, window.innerHeight/2, 'golden', 50);
-    
-    saveGame();
-  };
+  const handleSave = useCallback(() => {
+    engine.save();
+    addText(window.innerWidth / 2, window.innerHeight / 2, '💾 Salvo!', '#4CAF50', false);
+  }, [engine, addText]);
 
-  const handleBuyGalaxy = (galaxyId: string) => {
-    const galaxy = (rebirthSystem.galaxies as any)[galaxyId];
-    if (!galaxy) return;
-    
-    if (hotOilFragments >= galaxy.cost) {
-      setHotOilFragments(h => h - galaxy.cost);
-      rebirthSystem.hotOilFragments -= galaxy.cost;
-      rebirthSystem.ownedGalaxies[galaxyId] = true;
-      setCurrentGalaxy(galaxyId);
-      rebirthSystem.currentGalaxy = galaxyId;
-      
-      addFloatingText(window.innerWidth/2, window.innerHeight/3, `${galaxy.name} Desbloqueada!`, '#06b6d4', true);
-      spawnParticles(window.innerWidth/2, window.innerHeight/2, 'golden', 30);
-      saveGame();
+  // ── Reset Handler ────────────────────────────────────────────────────────
+
+  const handleReset = useCallback(() => {
+    if (confirm('Reiniciar o universo gastronômico? Todo progresso será perdido!')) {
+      resetAll();
     }
-  };
+  }, [resetAll]);
 
-  const handleExploreGalaxy = (galaxyId: string) => {
-    const planet = rebirthSystem.discoverPlanet(galaxyId);
-    if (planet) {
-      addFloatingText(window.innerWidth/2, window.innerHeight/3, `Planeta Descoberto: ${planet.name}!`, '#fbbf24', true);
-      setCurrentGalaxy(galaxyId);
-      rebirthSystem.currentGalaxy = galaxyId;
-      saveGame();
-    }
-  };
+  // ── Pre-Game Menu ────────────────────────────────────────────────────────
 
-  const handleTravelGalaxy = (galaxyId: string) => {
-    setCurrentGalaxy(galaxyId);
-    rebirthSystem.currentGalaxy = galaxyId;
-    addFloatingText(window.innerWidth/2, window.innerHeight/3, `Viajando para ${(rebirthSystem.galaxies as any)[galaxyId]?.name}...`, '#10b981', false);
-    saveGame();
-  };
-
-  const handleShowRequirements = (galaxy: any) => {
-    const unmetRequirements = galaxy.requirements.filter((req: any) => {
-      const value = (stats as any)[req.stat];
-      return value < req.amount;
-    });
-    
-    const reqText = unmetRequirements.map((r: any) => `${r.stat}: ${r.amount}`).join('\n');
-    alert(`Requisitos não atendidos para ${galaxy.name}:\n\n${reqText}`);
-  };
-
-  const stats = {
-    total_coxinhas: lifetimeCoxinhas,
-    rebirths: rebirthCount,
-    galaxies_owned: Object.keys(rebirthSystem.ownedGalaxies).length,
-    planets_discovered: rebirthSystem.discoveredPlanets.length,
-    time_played: 0,
-    portals_entered: rebirthCount,
-    ascensions_completed: rebirthCount,
-    cities_owned: buildings.reduce((a, b) => a + b.count, 0),
-    click_count: 0,
-    buildings_purchased: buildings.reduce((a, b) => a + b.count, 0)
-  };
-
-  const cursorCount = buildings.find(b => b.id === 'cursor')?.count || 0;
-
-  // Show Coxinha Menu if game hasn't started
   if (!gameStarted) {
     return (
       <>
-        <CoxinhaMenu 
+        <CoxinhaMenu
           onStartGame={() => setGameStarted(true)}
           onContinueGame={() => setGameStarted(true)}
-          hasSave={!!localStorage.getItem(SAVE_KEY)}
+          hasSave={!!localStorage.getItem('coxinha_clicker_aaa_v2') || !!localStorage.getItem('coxinha_clicker_ultimate_2026')}
           stats={{
-            balance: Math.floor(coxinhas),
+            balance: Math.floor(state.resources.coxinhas),
             perSecond: Math.floor(cps),
             perClick: Math.floor(clickPower),
-            bonus: globalMultiplier > 1 ? Math.floor((globalMultiplier - 1) * 100) : 0
+            bonus: globalMultiplier > 1 ? Math.floor((globalMultiplier - 1) * 100) : 0,
           }}
         />
-        <MusicPlayer enabled={musicEnabled} volume={0.3} />
+        <MusicPlayer enabled={state.settings.musicEnabled} volume={state.settings.musicVolume} />
       </>
     );
   }
 
+  const cursorCount = state.buildings.find(b => b.id === 'cursor')?.count || 0;
+
+  // ── Tab Content Render ───────────────────────────────────────────────────
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'buildings': return <BuildingList />;
+      case 'upgrades': return <UpgradeGrid />;
+      case 'achievements': return <AchievementPanel />;
+      case 'skills': return <SkillTreePanel />;
+      case 'pets': return <PetPanel />;
+      case 'crafting': return <CraftingPanel />;
+      case 'challenges': return <ChallengePanel />;
+      case 'statistics': return <StatisticsPanel />;
+      case 'relics': return <RelicPanel />;
+      case 'research': return <ResearchPanel />;
+      case 'spells': return <SpellPanel />;
+      case 'expeditions': return <ExpeditionPanel />;
+      case 'bosses': return <BossPanel />;
+      case 'garden': return <GardenPanel />;
+      case 'trading': return <TradingPanel />;
+      case 'enchantments': return <EnchantmentPanel />;
+      case 'artifacts': return <ArtifactPanel />;
+      case 'minigames': return <MiniGamePanel />;
+      case 'automation': return <AutoBuyerPanel />;
+      default: return <BuildingList />;
+    }
+  };
+
+  // ── Main Render ──────────────────────────────────────────────────────────
+
   return (
     <>
-      <div className="h-screen w-screen flex flex-col overflow-hidden relative select-none">
-      
-      {/* Background Texture Overlay */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
-      
-      {/* Golden Coxinha Frenzy Glow */}
-      {frenzyActive && <div className="absolute inset-0 pointer-events-none animate-pulse bg-yellow-500/10 z-0"></div>}
+      <div className="h-screen w-screen flex flex-col overflow-hidden relative select-none bg-[#0a0604]">
+        {/* Background */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
+        {hasFrenzy && <div className="absolute inset-0 pointer-events-none animate-pulse bg-yellow-500/10 z-0" />}
 
-      <NewsTicker />
-      <GoldenCoxinha onClick={handleGoldenCoxinha} spawnRateMultiplier={goldenSpawnRate} />
+        {/* Weather Display */}
+        <WeatherDisplay />
 
-      {/* Systems UI Overlay */}
-      <SystemsUI 
-        comboCount={comboCount}
-        activeEvent={activeEvent}
-        questProgress={questProgress}
-        questsCompleted={questsCompleted}
-        events={eventNotifications}
-      />
+        {/* News Ticker */}
+        <NewsTicker />
 
-      {floatingTexts.map(t => (
-        <div key={t.id} className="floating-text" style={{ left: t.x, top: t.y, color: t.color, fontSize: t.isBig ? '2rem' : '1.2rem' }}>{t.text}</div>
-      ))}
-      
-      {particles.map(p => (
-        <div key={p.id} className="particle" style={{ left: p.x, top: p.y, width: p.size, height: p.size, opacity: p.opacity, background: p.color || 'white' }} />
-      ))}
+        {/* Golden Coxinha */}
+        <GoldenCoxinha onClick={handleGolden} spawnRateMultiplier={goldenSpawnRate} />
 
-      {/* --- MASTER LAYOUT --- */}
-      <div className="flex-1 flex flex-col lg:flex-row h-full overflow-hidden relative z-10">
-        
-        {/* COLUMN 1: STATS CARDS (Left) */}
-        <div className="lg:w-[300px] p-4 flex flex-col gap-3 z-20 overflow-y-auto custom-scrollbar lg:border-r border-[#3d2211] glass-panel">
-            <div className="text-[#8a5a3a] text-xs font-bold uppercase tracking-widest mb-1 pl-1">Produção</div>
+        {/* Notifications */}
+        <NotificationToast />
+
+        {/* Combo Display */}
+        <ComboDisplay />
+
+        {/* Event Banner */}
+        <EventBanner />
+
+        {/* Floating Texts */}
+        {texts.map(t => (
+          <div
+            key={t.id}
+            className="floating-text"
+            style={{
+              left: t.x, top: t.y, color: t.color,
+              fontSize: t.isCrit ? '2rem' : '1.2rem',
+            }}
+          >
+            {t.text}
+          </div>
+        ))}
+
+        {/* Particles */}
+        {particles.map(p => (
+          <div
+            key={p.id}
+            className="particle"
+            style={{
+              left: p.x, top: p.y,
+              width: p.size, height: p.size,
+              opacity: p.life,
+              background: p.color,
+            }}
+          />
+        ))}
+
+        {/* ── MASTER LAYOUT ────────────────────────────────────────────── */}
+        <div className="flex-1 flex flex-col lg:flex-row h-full overflow-hidden relative z-10">
+
+          {/* ── LEFT PANEL: Stats ──────────────────────────────────────── */}
+          <div className={`${leftPanelOpen ? 'lg:w-[280px]' : 'lg:w-0 lg:overflow-hidden'} transition-all duration-300 p-3 flex flex-col gap-2 z-20 overflow-y-auto custom-scrollbar lg:border-r border-[#3d2211] glass-panel`}>
             
-            {/* Main Counters */}
-            <div className="flex flex-col gap-3">
-                <div className="bg-[#1a0f08] p-4 rounded-xl border border-[#ffaa00]/30 relative overflow-hidden group">
-                    <div className="text-gray-400 text-[10px] font-bold uppercase">Saldo Atual</div>
-                    <div className="text-3xl font-black text-[#ffaa00] drop-shadow-lg truncate">{formatNumber(coxinhas)}</div>
-                    <div className="text-[10px] text-gray-500">Coxinhas</div>
-                </div>
+            {/* Toggle button */}
+            <button
+              className="hidden lg:flex absolute left-[275px] top-1/2 -translate-y-1/2 z-30 bg-[#1a0f08] border border-[#3d2211] rounded-r p-1 hover:bg-[#25160b]"
+              onClick={() => setLeftPanelOpen(!leftPanelOpen)}
+              style={{ left: leftPanelOpen ? '275px' : '0px' }}
+            >
+              {leftPanelOpen ? <ChevronLeft size={14} className="text-gray-500" /> : <ChevronRight size={14} className="text-gray-500" />}
+            </button>
 
-                <div className={`bg-[#1a0f08] p-3 rounded-xl border ${frenzyActive ? 'border-yellow-500 animate-pulse' : 'border-[#39ff14]/20'} relative`}>
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <div className="text-gray-400 text-[10px] uppercase">Velocidade</div>
-                            <div className="text-xl font-bold text-[#39ff14]">{formatNumber(cps)} <span className="text-xs text-gray-500">Cx/S</span></div>
-                        </div>
-                        <TrendingUp size={20} className="text-[#39ff14]" />
-                    </div>
+            {/* XP Bar */}
+            <XpBar />
+
+            {/* Player */}
+            <div className="text-[9px] text-gray-500 text-center">
+              {state.player.title || 'Cozinheiro'} · {state.player.name}
+            </div>
+
+            {/* Main Counters */}
+            <div className="bg-[#1a0f08] p-3 rounded-xl border border-[#ffaa00]/30">
+              <div className="text-gray-400 text-[10px] font-bold uppercase">Saldo</div>
+              <div className="text-2xl font-black text-[#ffaa00] drop-shadow-lg truncate">{formatNumber(state.resources.coxinhas)}</div>
+              <div className="text-[10px] text-gray-500">Coxinhas</div>
+            </div>
+
+            <div className={`bg-[#1a0f08] p-2 rounded-xl border ${hasFrenzy ? 'border-yellow-500 animate-pulse' : 'border-[#39ff14]/20'}`}>
+              <div className="flex justify-between items-center">
+                <div>
+                  <div className="text-gray-400 text-[9px] uppercase">Velocidade</div>
+                  <div className="text-lg font-bold text-[#39ff14]">{formatNumber(cps)} <span className="text-[10px] text-gray-500">Cx/S</span></div>
                 </div>
+                <TrendingUp size={16} className="text-[#39ff14]" />
+              </div>
             </div>
 
             {/* Sub Stats */}
-            <div className="grid grid-cols-2 gap-2 mt-2">
-                 <div className="bg-black/30 p-2 rounded border border-white/5">
-                    <div className="text-blue-400 mb-1"><MousePointer2 size={16}/></div>
-                    <div className="text-sm font-bold">{formatNumber(clickPower)}</div>
-                    <div className="text-[8px] uppercase opacity-50">Por Clique</div>
-                 </div>
-                 <div className="bg-black/30 p-2 rounded border border-white/5">
-                    <div className="text-purple-400 mb-1"><Zap size={16}/></div>
-                    <div className="text-sm font-bold">{Math.floor((globalMultiplier - 1) * 100)}%</div>
-                    <div className="text-[8px] uppercase opacity-50">Bônus</div>
-                 </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <div className="bg-black/30 p-1.5 rounded border border-white/5">
+                <div className="text-blue-400 mb-0.5"><MousePointer2 size={12} /></div>
+                <div className="text-xs font-bold">{formatNumber(clickPower)}</div>
+                <div className="text-[7px] uppercase opacity-50">Por Clique</div>
+              </div>
+              <div className="bg-black/30 p-1.5 rounded border border-white/5">
+                <div className="text-purple-400 mb-0.5"><Zap size={12} /></div>
+                <div className="text-xs font-bold">{Math.floor((globalMultiplier - 1) * 100)}%</div>
+                <div className="text-[7px] uppercase opacity-50">Bônus</div>
+              </div>
             </div>
 
-            {/* Rebirth Panel */}
-            <div className="mt-4 pt-4 border-t border-white/10">
-              <RebirthPanel 
-                hotOilFragments={hotOilFragments}
-                rebirthCount={rebirthCount}
-                totalCoxinhas={lifetimeCoxinhas}
-                prestige={rebirthCount}
-                nextRebirthFragments={Math.floor(rebirthSystem.calculateRebirthGain(lifetimeCoxinhas, rebirthCount))}
-                onRebirthClick={handleRebirth}
-              />
+            {/* Resources Bar */}
+            <ResourcesBar />
+
+            {/* Active Buffs */}
+            <BuffBar />
+
+            {/* Quests Mini */}
+            <div className="border-t border-white/5 pt-2">
+              <QuestPanel />
             </div>
 
-            <div className="mt-auto pt-4 border-t border-white/5 space-y-2">
-                 <div className="text-[9px] text-center opacity-30 font-mono">{formatNumber(lifetimeCoxinhas)} Total Lifetime</div>
-                 <button onClick={() => setShowGalaxyExplorer(!showGalaxyExplorer)} className="w-full bg-purple-900/30 hover:bg-purple-800/40 text-purple-300 text-[10px] py-2 rounded border border-purple-700/30 uppercase font-bold transition-colors flex items-center justify-center gap-2">
-                    <Sparkles size={12}/> Galáxias
-                 </button>
-                 <div className="flex gap-1">
-                    <button onClick={saveGame} className="flex-1 bg-[#2c1810] hover:bg-[#3d2211] text-[#d4a574] text-[10px] py-2 rounded border border-[#d4a574]/20 uppercase font-bold transition-colors">Salvar</button>
-                    <button onClick={reset} className="flex-1 bg-[#2c1810] hover:bg-red-900/30 text-red-400 text-[10px] py-2 rounded border border-red-900/20 uppercase font-bold transition-colors">Reset</button>
-                    <button onClick={() => setSoundEnabled(!soundEnabled)} className="w-8 bg-[#2c1810] text-[#d4a574] flex items-center justify-center rounded border border-[#d4a574]/20">
-                        {soundEnabled ? <Volume2 size={12}/> : <VolumeX size={12}/>}
-                    </button>
-                 </div>
+            {/* Rebirth */}
+            <div className="border-t border-white/5 pt-2">
+              <RebirthPanelNew />
             </div>
-        </div>
 
-        {/* COLUMN 2: BIG COXINHA (Center) */}
-        <div className="flex-1 flex items-center justify-center relative p-6 bg-radial-oil">
+            {/* Ascension */}
+            <div className="border-t border-white/5 pt-2">
+              <AscensionPanel />
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="mt-auto pt-2 border-t border-white/5 space-y-1.5">
+              <div className="text-[8px] text-center opacity-30 font-mono">{formatNumber(state.statistics.totalCoxinhasEarned)} Total</div>
+              <div className="flex gap-1">
+                <button onClick={handleSave} className="flex-1 bg-[#2c1810] hover:bg-[#3d2211] text-[#d4a574] text-[9px] py-1.5 rounded border border-[#d4a574]/20 uppercase font-bold transition-colors">
+                  <Save size={10} className="inline mr-1" />Salvar
+                </button>
+                <button onClick={handleReset} className="flex-1 bg-[#2c1810] hover:bg-red-900/30 text-red-400 text-[9px] py-1.5 rounded border border-red-900/20 uppercase font-bold transition-colors">
+                  <RotateCcw size={10} className="inline mr-1" />Reset
+                </button>
+                <button
+                  onClick={() => updateSettings({ soundEnabled: !state.settings.soundEnabled })}
+                  className="w-7 bg-[#2c1810] text-[#d4a574] flex items-center justify-center rounded border border-[#d4a574]/20"
+                >
+                  {state.settings.soundEnabled ? <Volume2 size={10} /> : <VolumeX size={10} />}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── CENTER: Big Coxinha ────────────────────────────────────── */}
+          <div className="flex-1 flex items-center justify-center relative p-4 bg-radial-oil min-h-[300px]">
             <BigCoxinha onClick={handleClick} cursorCount={cursorCount} />
-        </div>
+          </div>
 
-        {/* COLUMN 3: BUILDINGS (Right) */}
-        <div className="lg:w-[380px] flex flex-col glass-panel lg:border-l border-[#3d2211] z-20">
-            <div className="p-4 bg-[#120a06] border-b border-[#3d2211] flex justify-between items-center shadow-md">
-                <div className="flex items-center gap-2">
-                    <div className="w-1 h-4 bg-[#ffaa00] rounded"></div>
-                    <h2 className="font-bold text-[#e5e5e5] uppercase text-sm tracking-wide">Estruturas</h2>
-                </div>
-                <div className="text-[10px] bg-[#2a1810] px-2 py-1 rounded text-[#ffaa00] border border-[#ffaa00]/20">
-                    {buildings.reduce((acc, b) => acc + b.count, 0)} Ativos
-                </div>
+          {/* ── RIGHT PANEL: Tabbed Content ────────────────────────────── */}
+          <div className="lg:w-[380px] flex flex-col glass-panel lg:border-l border-[#3d2211] z-20">
+            {/* Tab Bar */}
+            <div className="flex flex-wrap bg-[#120a06] border-b border-[#3d2211] px-1 py-1 gap-0.5">
+              {TABS.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`text-[9px] px-2 py-1 rounded transition-all font-bold ${
+                    activeTab === tab.id
+                      ? 'bg-[#ffaa00] text-black'
+                      : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                  }`}
+                  title={tab.label}
+                >
+                  {tab.icon}
+                </button>
+              ))}
             </div>
-            <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-[#0f0705]">
-                {buildings.map(b => (
-                    <BuildingRow 
-                        key={b.id} 
-                        building={b} 
-                        canAfford={coxinhas >= calculateBuildingCost(b.baseCost, b.count)} 
-                        onBuy={() => buy(calculateBuildingCost(b.baseCost, b.count), () => setBuildings(prev => prev.map(pb => pb.id === b.id ? { ...pb, count: pb.count + 1 } : pb)), 'building')} 
-                    />
-                ))}
-                <div className="h-4"></div>
-            </div>
-        </div>
-      </div>
 
-      {/* --- BOTTOM ROW: UPGRADES --- */}
-      <div className="h-[280px] lg:h-[220px] glass-panel border-t border-[#3d2211] z-30 flex flex-col shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
-         <div className="px-4 py-2 bg-[#120a06] border-b border-[#3d2211] flex items-center gap-3">
-             <Trophy size={16} className="text-[#ffaa00]" />
-             <span className="font-bold text-xs uppercase tracking-widest text-[#d4a574]">Pesquisa & Desenvolvimento</span>
-         </div>
-         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-[#1a0f08]">
-             <Upgrades upgrades={upgrades} coxinhas={coxinhas} onBuy={(id, cost) => buy(cost, () => setUpgrades(prev => prev.map(u => u.id === id ? { ...u, purchased: true } : u)), 'upgrade')} />
-         </div>
-      </div>
-
-    </div>
-      <MusicPlayer enabled={musicEnabled} volume={0.3} />
-
-      {/* Galaxy Explorer Modal */}
-      {showGalaxyExplorer && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-[#1a1a2e] rounded-2xl border-2 border-purple-500/30 shadow-2xl max-w-7xl w-full my-10">
-            <div className="flex justify-between items-center p-6 border-b border-purple-500/20 bg-[#16213e]">
-              <h2 className="text-2xl font-bold text-purple-300 flex items-center gap-2">
-                <Sparkles size={24} /> Exploração Galáctica
+            {/* Tab Title */}
+            <div className="px-3 py-2 bg-[#120a06] border-b border-[#3d2211] flex items-center gap-2">
+              <div className="w-1 h-3 bg-[#ffaa00] rounded" />
+              <h2 className="font-bold text-[#e5e5e5] uppercase text-xs tracking-wide">
+                {TABS.find(t => t.id === activeTab)?.label || activeTab}
               </h2>
-              <button 
-                onClick={() => setShowGalaxyExplorer(false)}
-                className="text-purple-400 hover:text-purple-300 text-3xl leading-none"
-              >
-                ×
-              </button>
+              {activeTab === 'buildings' && (
+                <div className="ml-auto text-[9px] bg-[#2a1810] px-2 py-0.5 rounded text-[#ffaa00] border border-[#ffaa00]/20">
+                  {state.buildings.reduce((a, b) => a + b.count, 0)} Ativos
+                </div>
+              )}
             </div>
-            <div className="p-6 bg-gradient-to-b from-purple-900/20 to-black/20 max-h-[80vh] overflow-y-auto">
-              <GalaxyExplorer
-                rebirthSystem={rebirthSystem}
-                hotOilFragments={hotOilFragments}
-                currentGalaxy={currentGalaxy}
-                stats={stats}
-                onBuyGalaxy={handleBuyGalaxy}
-                onExploreGalaxy={handleExploreGalaxy}
-                onTravelGalaxy={handleTravelGalaxy}
-                onRequirementsShow={handleShowRequirements}
-              />
+
+            {/* Tab Content */}
+            <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-[#0f0705]">
+              {renderTabContent()}
             </div>
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Music Player */}
+      <MusicPlayer enabled={state.settings.musicEnabled} volume={state.settings.musicVolume} />
     </>
+  );
+};
+
+// ── App Root (wraps with GameProvider) ────────────────────────────────────────
+
+const App: React.FC = () => {
+  return (
+    <GameProvider>
+      <GameApp />
+    </GameProvider>
   );
 };
 

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../styles/CoxinhaMenuDesign2026.css';
-import GalaxyModal from './GalaxyModal';
+import '../styles/CoxinhaMenuClean.css';
 import { Settings, Play } from 'lucide-react';
 
 interface CoxinhaMenuProps {
@@ -27,18 +26,8 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
   }
 }) => {
   const [showSettings, setShowSettings] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [particles, setParticles] = useState<React.ReactNode[]>([]);
-  const [galaxyUnlocked, setGalaxyUnlocked] = useState(false);
-  const [showGalaxyModal, setShowGalaxyModal] = useState(false);
-  const [saveData, setSaveData] = useState<any>(null);
-  const [galaxyData, setGalaxyData] = useState({
-    current: 'Via Láctea',
-    system: 'Sistema Solar',
-    planet: 'Terra',
-    progress: 0,
-    galaxiesDiscovered: 0,
-    planetsVisited: 0
-  });
 
   // Create floating particles on mount
   useEffect(() => {
@@ -54,43 +43,6 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
       />
     ));
     setParticles(particleElements);
-  }, []);
-
-  // Check galaxy unlock status and load galaxy data
-  useEffect(() => {
-    const checkGalaxyUnlock = () => {
-      try {
-        const saveData = localStorage.getItem('coxinha_clicker_ultimate_2026');
-        if (!saveData) {
-          setGalaxyUnlocked(false);
-          return;
-        }
-
-        const save = JSON.parse(saveData);
-        setSaveData(save);
-        
-        // Requirements: 10 ascensions, 100 portals, 1 septillion coxinhas
-        const prestigeLevel = save.prestigeLevel || 0;
-        const portalCount = save.buildings?.find((b: any) => b.id === 'portal')?.count || 0;
-        const totalCoxinhas = save.totalCoxinhas || 0;
-
-        const isUnlocked = prestigeLevel >= 10 && portalCount >= 100 && totalCoxinhas >= 1e24;
-        setGalaxyUnlocked(isUnlocked);
-
-        // Load galaxy data if exists
-        if (save.galaxy) {
-          setGalaxyData(prev => ({
-            ...prev,
-            ...save.galaxy
-          }));
-        }
-      } catch (e) {
-        console.error('Error checking galaxy unlock:', e);
-        setGalaxyUnlocked(false);
-      }
-    };
-
-    checkGalaxyUnlock();
   }, []);
 
   const handleNavigate = (path: string) => {
@@ -122,15 +74,6 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
   const handleCredits = () => {
     handleNavigate('Créditos');
   };
-
-  const handleGalaxyExplorer = () => {
-    if (galaxyUnlocked) {
-      console.log('Abrir Exploração Galáctica');
-      alert('🌌 EXPLORAÇÃO GALÁCTICA\n\nCarregando sistema de exploração galáctica...\n\n✨ Acesse 100+ galáxias\n💫 Descubra novos recursos cósmicos\n🛸 Recrute aliados alienígenas');
-    } else {
-      setShowGalaxyModal(true);
-    }
-  };
   return (
     <div className="coxinha-menu">
       {/* Progress Bar - Top Animated */}
@@ -142,6 +85,15 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
       <div className="particles">
         {particles}
       </div>
+
+      {/* Sidebar Toggle Button */}
+      <button 
+        className="sidebar-toggle-btn" 
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        title="Pesquisa e Sistemas"
+      >
+        📊
+      </button>
 
       {/* Settings Button */}
       <button 
@@ -181,28 +133,6 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
             </button>
           </div>
 
-          {/* Galaxy Explorer Card */}
-          <div className="galaxy-feature-card" onClick={handleGalaxyExplorer}>
-            <div className="galaxy-card-header">
-              <div className="galaxy-card-icon">⚡</div>
-              <div className="galaxy-card-title">
-                <div className="galaxy-card-main">EXPLORAÇÃO</div>
-                <div className="galaxy-card-main">GALÁCTICA</div>
-              </div>
-              <div className="galaxy-card-badge">NOVO</div>
-            </div>
-            <div className="galaxy-card-content">
-              <div className="galaxy-item">
-                <span className="galaxy-item-name">Via Láctea</span>
-                <span className="galaxy-item-progress">Exploração 0%</span>
-              </div>
-              <div className="galaxy-item-list">
-                <div className="galaxy-item-sub">🌍 Sistema Solar</div>
-                <div className="galaxy-item-sub">🌎 Terra</div>
-              </div>
-            </div>
-          </div>
-
           <div className="menu-buttons secondary-actions">
             <button 
               className="menu-btn secondary" 
@@ -231,7 +161,7 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
         </main>
 
         {/* Right Sidebar - Research/Features Preview */}
-        <aside className="right-sidebar">
+        <aside className={`right-sidebar ${sidebarOpen ? 'open' : ''}`}>
           {/* Core Systems */}
           <div className="research-section">
             <div className="research-title">
@@ -345,54 +275,7 @@ const CoxinhaMenu: React.FC<CoxinhaMenuProps> = ({
           </div>
         </div>
 
-        {/* Galaxy Stats Section */}
-        {galaxyData && (
-          <div className="galaxy-stats bottom-galaxy-stats">
-            <div className="galaxy-title">
-              <span className="galaxy-icon">🌌</span>
-              Exploração Galáctica
-            </div>
-            
-            <div className="current-galaxy">
-              <div className="galaxy-name">{galaxyData.current}</div>
-              <div className="galaxy-location">
-                📍 {galaxyData.system} • {galaxyData.planet}
-              </div>
-            </div>
-
-            <div className="galaxy-progress" style={{ marginBottom: '8px' }}>
-              <div className="galaxy-progress-label" style={{ fontSize: '11px', marginBottom: '6px' }}>
-                <span>Exploração</span>
-                <span>{galaxyData.progress || 0}%</span>
-              </div>
-              <div className="galaxy-progress-bar">
-                <div 
-                  className="galaxy-progress-fill" 
-                  style={{ width: `${galaxyData.progress || 0}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="galaxy-quick-stats">
-              <div className="galaxy-quick-stat">
-                <div className="galaxy-quick-stat-value">{galaxyData.galaxiesDiscovered || 0}</div>
-                <div className="galaxy-quick-stat-label">Galáxias</div>
-              </div>
-              <div className="galaxy-quick-stat">
-                <div className="galaxy-quick-stat-value">{galaxyData.planetsVisited || 0}</div>
-                <div className="galaxy-quick-stat-label">Planetas</div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-
-      {/* Galaxy Modal */}
-      <GalaxyModal 
-        isOpen={showGalaxyModal} 
-        onClose={() => setShowGalaxyModal(false)}
-        save={saveData}
-      />
 
       {/* Settings Modal */}
       {showSettings && (
